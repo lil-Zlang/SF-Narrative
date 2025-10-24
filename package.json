@@ -1,0 +1,42 @@
+{
+  "name": "sf-narrative",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "postinstall": "prisma generate",
+    "test-x-api": "tsx scripts/test-x-api.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lil-Zlang/SF-Narrative.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lil-Zlang/SF-Narrative/issues"
+  },
+  "homepage": "https://github.com/lil-Zlang/SF-Narrative#readme",
+  "dependencies": {
+    "@prisma/client": "^6.18.0",
+    "@tailwindcss/postcss": "^4.1.16",
+    "@types/node": "^24.9.1",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "autoprefixer": "^10.4.21",
+    "dotenv": "^17.2.3",
+    "next": "^16.0.0",
+    "postcss": "^8.5.6",
+    "prisma": "^6.18.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tailwindcss": "^4.1.16",
+    "typescript": "^5.9.3",
+    "zod": "^4.1.12"
+  }
+}
