@@ -9,8 +9,8 @@ import { Slider } from './Slider';
 import { ContentPanel } from './ContentPanel';
 import { BattleHeader } from './BattleHeader';
 import { PostBattleAnalysis } from './PostBattleAnalysis';
-import { SentimentGauge } from '../SentimentGauge';
-import { ChatbotModal } from '../ChatbotModal';
+import SentimentGauge from '../SentimentGauge';
+import ChatbotModal from '../ChatbotModal';
 
 /**
  * SplitScreenBattle Component
@@ -29,12 +29,12 @@ export default function SplitScreenBattle({
   backlashTweets = [],
   communitySentiment = UI_CONFIG.DEFAULT_COMMUNITY_SENTIMENT
 }: SplitScreenBattleProps) {
-  const [sliderPosition, setSliderPosition] = useState(UI_CONFIG.DEFAULT_SLIDER_POSITION);
+  const [sliderPosition, setSliderPosition] = useState<number>(UI_CONFIG.DEFAULT_SLIDER_POSITION);
   const [isDragging, setIsDragging] = useState(false);
-  const [userSentiment, setUserSentiment] = useState(UI_CONFIG.DEFAULT_SENTIMENT);
+  const [userSentiment, setUserSentiment] = useState<{hype: number; backlash: number}>(UI_CONFIG.DEFAULT_SENTIMENT);
   const [showSentimentGauge, setShowSentimentGauge] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
-  const [currentCommunitySentiment, setCurrentCommunitySentiment] = useState(communitySentiment);
+  const [currentCommunitySentiment, setCurrentCommunitySentiment] = useState<{hype: number; backlash: number}>(communitySentiment);
   const [isLoading, setIsLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 

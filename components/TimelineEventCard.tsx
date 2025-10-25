@@ -1,7 +1,7 @@
 'use client';
 
 import { UI_CONFIG } from '@/lib/constants';
-import { SplitScreenBattle } from './ui/SplitScreenBattle';
+import SplitScreenBattle from './ui/SplitScreenBattle';
 import type { TimelineEvent, TimelineEventCardProps } from '@/lib/types';
 
 /**

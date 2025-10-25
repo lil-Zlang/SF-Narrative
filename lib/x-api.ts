@@ -210,7 +210,7 @@ export async function fetchStructuredTweetsForEvidence(
     const users = validatedData.includes?.users || [];
     const userMap = new Map(users.map(user => [user.id, user]));
 
-    const structuredTweets = validatedData.data.map((tweet: Tweet) => {
+    const structuredTweets = validatedData.data.map((tweet: RawTweet) => {
       const user = userMap.get(tweet.author_id || '') || { name: 'Unknown', username: 'unknown' };
       
       return {

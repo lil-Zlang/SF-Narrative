@@ -43,7 +43,7 @@ export function ContentPanel({ content, sentiment, width, isLoading = false }: C
         
         {content.type === 'summary' ? (
           <p className="text-xs font-mono text-gray-800 leading-relaxed">
-            {content.content}
+            {content.content as string}
           </p>
         ) : (
           <div className="space-y-1.5">

@@ -192,7 +192,7 @@ export default function SplitScreenBattle({
             
             {contentToShow.left.type === 'summary' ? (
               <p className="text-xs font-mono text-gray-800 leading-relaxed">
-                {contentToShow.left.content}
+                {contentToShow.left.content as string}
               </p>
             ) : (
               <div className="space-y-1.5">
@@ -221,7 +221,7 @@ export default function SplitScreenBattle({
             
             {contentToShow.right.type === 'summary' ? (
               <p className="text-xs font-mono text-gray-800 leading-relaxed">
-                {contentToShow.right.content}
+                {contentToShow.right.content as string}
               </p>
             ) : (
               <div className="space-y-1.5">

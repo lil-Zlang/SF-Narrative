@@ -318,3 +318,27 @@ export function deepClone<T>(obj: T): T {
   }
   return obj;
 }
+
+/**
+ * Handle external API errors with proper error context
+ */
+export function handleExternalApiError(error: any, apiName: string, statusCode?: number): Error {
+  const message = error?.message || 'Unknown API error';
+  const enhancedError = new Error(`${apiName}: ${message}`);
+  (enhancedError as any).apiName = apiName;
+  (enhancedError as any).statusCode = statusCode;
+  (enhancedError as any).originalError = error;
+  return enhancedError;
+}
+
+/**
+ * Log error with context
+ */
+export function logError(error: any, context: string): void {
+  console.error(`[${context}] Error:`, {
+    message: error?.message || 'Unknown error',
+    stack: error?.stack,
+    context,
+    timestamp: new Date().toISOString()
+  });
+}

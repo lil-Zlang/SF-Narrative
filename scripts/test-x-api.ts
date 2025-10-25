@@ -81,9 +81,9 @@ async function testXAPIConfiguration() {
         hypeSummary: analysis.hypeSummary,
         backlashSummary: analysis.backlashSummary,
         weeklyPulse: analysis.weeklyPulse,
-        hypeTweets: hypeTweets,
-        backlashTweets: backlashTweets,
-        communitySentiment: initialCommunitySentiment,
+        hypeTweets: JSON.parse(JSON.stringify(hypeTweets)),
+        backlashTweets: JSON.parse(JSON.stringify(backlashTweets)),
+        communitySentiment: JSON.parse(JSON.stringify(initialCommunitySentiment)),
         updatedAt: new Date(),
       },
       create: {
@@ -92,9 +92,9 @@ async function testXAPIConfiguration() {
         hypeSummary: analysis.hypeSummary,
         backlashSummary: analysis.backlashSummary,
         weeklyPulse: analysis.weeklyPulse,
-        hypeTweets: hypeTweets,
-        backlashTweets: backlashTweets,
-        communitySentiment: initialCommunitySentiment,
+        hypeTweets: JSON.parse(JSON.stringify(hypeTweets)),
+        backlashTweets: JSON.parse(JSON.stringify(backlashTweets)),
+        communitySentiment: JSON.parse(JSON.stringify(initialCommunitySentiment)),
       },
     });
 

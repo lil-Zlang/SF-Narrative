@@ -3,7 +3,6 @@
  */
 
 import { ERROR_MESSAGES } from './constants';
-import type { AppError } from './types';
 
 /**
  * Custom error class for application-specific errors

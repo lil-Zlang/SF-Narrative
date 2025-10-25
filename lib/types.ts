@@ -26,6 +26,18 @@ export interface RawTweet {
   };
 }
 
+// Structured Tweet Interface (for evidence layer)
+export interface StructuredTweet {
+  id: string;
+  text: string;
+  author: string;
+  username: string;
+  timestamp: string;
+  likes: number;
+  retweets: number;
+  sentiment: 'hype' | 'backlash';
+}
+
 // User Interface
 export interface User {
   id: string;
