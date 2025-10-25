@@ -217,7 +217,7 @@ export default function HomeClient({ events, weeklyNews: initialWeeklyNews, erro
               SF Weekly News Digest
             </h1>
             <p className="text-lg font-mono text-gray-600 max-w-2xl">
-              AI summary of the week's most important news across Tech, Politics, Economy, and SF Local.
+             The city's latest news, powered by AI. Catch up in 5 minutes.
             </p>
           </div>
 

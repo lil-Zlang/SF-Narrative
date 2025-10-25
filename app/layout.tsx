@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SF Narrative Battlefield",
-  description: "Timeline of SF trending topics with LLM-powered narrative analysis",
+  title: "SF Narrative",
+  description: "The city's essential news. Catch up in 5 minutes.",
 };
 
 export default function RootLayout({
