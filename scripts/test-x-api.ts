@@ -1,7 +1,7 @@
-import { fetchTweetsForTopic, fetchStructuredTweetsForEvidence } from '../lib/x-api';
+import { fetchTweetsForTopic, combineTweetsForAnalysis } from '../lib/x-api';
+import { fetchTweetsEfficient } from '../lib/x-api-efficient';
 import { prisma } from '../lib/prisma';
 import { analyzeNarrativesWithRetry } from '../lib/llm';
-import { combineTweetsForAnalysis } from '../lib/x-api';
 
 // Test with a single topic to verify X API configuration
 const testTopic = '#Dreamforce';
@@ -25,13 +25,11 @@ async function testXAPIConfiguration() {
     console.log(`\n📡 Testing with topic: ${testTopic}\n`);
     console.log('='.repeat(60));
     
-    // Step 1: Fetch evidence layer tweets (OPTIMIZED - SINGLE FETCH!)
+    // Step 1: Fetch tweets EFFICIENTLY (1 API call instead of 2!)
     console.log('\n1️⃣  Fetching tweets (3 hype + 2 backlash = 5 total)...');
+    console.log('   💡 EFFICIENT MODE: 1 API call, client-side filtering');
     console.log('   💡 These same tweets will be used for BOTH evidence layer AND LLM analysis');
-    const [hypeTweets, backlashTweets] = await Promise.all([
-      fetchStructuredTweetsForEvidence(testTopic, 'hype', 3),
-      fetchStructuredTweetsForEvidence(testTopic, 'backlash', 2)
-    ]);
+    const { hypeTweets, backlashTweets } = await fetchTweetsEfficient(testTopic);
     console.log(`✓ Fetched ${hypeTweets.length} hype tweets`);
     console.log(`✓ Fetched ${backlashTweets.length} backlash tweets`);
 
@@ -106,16 +104,17 @@ async function testXAPIConfiguration() {
     console.log('✅ Test completed successfully!');
     console.log('\n📊 API Usage Summary:');
     console.log('   X API (Twitter):');
-    console.log('   - 1 call for hype tweets (3 tweets)');
-    console.log('   - 1 call for backlash tweets (2 tweets)');
-    console.log('   - Total: 2 X API calls, 5 tweets fetched');
+    console.log('   - 1 EFFICIENT call for all tweets (20 fetched, 5 used)');
+    console.log('   - Client-side filtering by sentiment keywords');
+    console.log('   - Total: 1 X API call, 5 tweets used');
     console.log('   - Used 5 out of 100 posts (5%)');
     console.log('');
     console.log('   Novita AI (LLM):');
     console.log('   - 1 call to analyze 5 tweets');
     console.log('   - Generated hype, backlash, and weekly pulse summaries');
     console.log('\n💡 Cached data will be reused for subsequent calls!');
-    console.log('💡 Process all 9 topics = 45 tweets (45% of X API limit)');
+    console.log('💡 Process all 9 topics = 9 API calls (9% of X API limit)');
+    console.log('💡 EFFICIENT MODE: 50% fewer API calls!');
 
   } catch (error) {
     console.error('\n❌ Test failed:', error);

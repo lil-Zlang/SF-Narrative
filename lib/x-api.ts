@@ -1,9 +1,19 @@
 import { z } from 'zod';
 import { getCachedData, setCachedData } from './cache';
+import { 
+  API_CONFIG, 
+  SF_GEO_CONFIG, 
+  SENTIMENT_KEYWORDS, 
+  CACHE_CONFIG,
+  ERROR_MESSAGES 
+} from './constants';
+import { handleExternalApiError, logError, retry } from './utils';
+import type { RawTweet, User, Tweet, StructuredTweet } from './types';
 
 const TweetSchema = z.object({
   id: z.string(),
   text: z.string(),
+  author_id: z.string().optional(),
   created_at: z.string().optional(),
   public_metrics: z.object({
     like_count: z.number().optional(),
@@ -27,33 +37,6 @@ const TweetResponseSchema = z.object({
   }).optional(),
 });
 
-interface Tweet {
-  id: string;
-  text: string;
-  created_at?: string;
-  public_metrics?: {
-    like_count?: number;
-    retweet_count?: number;
-  };
-}
-
-interface User {
-  id: string;
-  username: string;
-  name: string;
-}
-
-interface StructuredTweet {
-  id: string;
-  text: string;
-  author: string;
-  username: string;
-  timestamp: string;
-  likes: number;
-  retweets: number;
-  sentiment: 'hype' | 'backlash';
-}
-
 /**
  * Fetch tweets related to a specific topic with San Francisco geolocation
  * @param topic - The topic/hashtag to search for
@@ -62,10 +45,10 @@ interface StructuredTweet {
  */
 export async function fetchTweetsForTopic(
   topic: string,
-  maxResults: number = 100
+  maxResults: number = API_CONFIG.MAX_TWEETS_PER_REQUEST
 ): Promise<string[]> {
   // Check cache first
-  const cachedTweets = await getCachedData<string[]>(topic, '_tweets');
+  const cachedTweets = await getCachedData<string[]>(topic, CACHE_CONFIG.TWEET_CACHE_SUFFIX);
   if (cachedTweets) {
     return cachedTweets;
   }
@@ -73,30 +56,24 @@ export async function fetchTweetsForTopic(
   const bearerToken = process.env.X_BEARER_TOKEN;
 
   if (!bearerToken) {
-    console.warn('X_BEARER_TOKEN is not configured in environment');
-    throw new Error('X_BEARER_TOKEN is not configured');
+    throw new Error(ERROR_MESSAGES.API_KEY_MISSING);
   }
 
   console.log(`📡 Calling X API for ${topic} (max: ${maxResults} tweets)...`);
 
   try {
-    // San Francisco's approximate bounding box coordinates
-    // Southwest corner: -122.5155, 37.7039
-    // Northeast corner: -122.3558, 37.8324
-    const geocode = '37.7749,-122.4194,25km'; // SF coordinates with 25km radius
+    const geocode = `${SF_GEO_CONFIG.LATITUDE},${SF_GEO_CONFIG.LONGITUDE},${SF_GEO_CONFIG.RADIUS_KM}km`;
 
-    // Build the search query
-    // Using recent search endpoint (v2)
     const searchParams = new URLSearchParams({
       query: `${topic} -is:retweet lang:en`,
-      max_results: Math.min(maxResults, 100).toString(), // API limit is 100 per request
+      max_results: Math.min(maxResults, API_CONFIG.MAX_TWEETS_PER_REQUEST).toString(),
       'tweet.fields': 'created_at,public_metrics',
       expansions: 'author_id',
       'user.fields': 'location',
       sort_order: 'relevancy',
     });
 
-    const url = `https://api.twitter.com/2/tweets/search/recent?${searchParams}`;
+    const url = `${API_CONFIG.X_API_BASE_URL}?${searchParams}`;
 
     const response = await fetch(url, {
       method: 'GET',
@@ -108,8 +85,10 @@ export async function fetchTweetsForTopic(
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(
-        `X API request failed: ${response.status} ${response.statusText} - ${errorText}`
+      throw handleExternalApiError(
+        new Error(`X API request failed: ${response.status} ${response.statusText} - ${errorText}`),
+        'X API',
+        response.status
       );
     }
 
@@ -122,22 +101,17 @@ export async function fetchTweetsForTopic(
     }
 
     // Extract just the tweet texts
-    const tweets = validatedData.data.map((tweet: Tweet) => tweet.text);
+    const tweets = validatedData.data.map((tweet: RawTweet) => tweet.text);
     
     // Cache the results
-    await setCachedData(topic, tweets, '_tweets');
+    await setCachedData(topic, tweets, CACHE_CONFIG.TWEET_CACHE_SUFFIX);
     console.log(`✓ Fetched and cached ${tweets.length} tweets for ${topic}`);
     
     return tweets;
   } catch (error) {
-    console.error(`Error fetching tweets for ${topic}:`, error);
-    
-    if (error instanceof z.ZodError) {
-      console.error('Validation error:', error.message);
-      throw new Error(`Invalid response format from X API: ${error.message}`);
-    }
-    
-    throw error;
+    const appError = handleExternalApiError(error, 'X API');
+    logError(appError, 'fetchTweetsForTopic');
+    throw appError;
   }
 }
 
@@ -164,7 +138,7 @@ export async function fetchStructuredTweetsForEvidence(
 
   if (!bearerToken) {
     console.warn('X_BEARER_TOKEN is not configured, returning mock data');
-    return getMockTweetsForSentiment(sentiment);
+    return getMockTweetsForSentiment(topic, sentiment);
   }
 
   console.log(`📡 Calling X API for ${sentiment} tweets: ${topic} (max: ${maxResults})...`);
@@ -178,9 +152,13 @@ export async function fetchStructuredTweetsForEvidence(
     const sentimentQuery = sentimentKeywords.map(keyword => `"${keyword}"`).join(' OR ');
     const query = `${topic} (${sentimentQuery}) -is:retweet lang:en`;
 
+    // X API requires max_results to be between 10 and 100
+    // We'll fetch the minimum (10) and slice the results if needed
+    const apiMaxResults = Math.max(10, Math.min(maxResults, 100));
+    
     const searchParams = new URLSearchParams({
       query,
-      max_results: Math.min(maxResults, 100).toString(),
+      max_results: apiMaxResults.toString(),
       'tweet.fields': 'created_at,public_metrics,author_id',
       expansions: 'author_id',
       'user.fields': 'username,name',
@@ -193,13 +171,31 @@ export async function fetchStructuredTweetsForEvidence(
       method: 'GET',
       headers: {
         Authorization: `Bearer ${bearerToken}`,
-        'Content-Type': 'application/json',
       },
     });
 
+    // Check rate limit headers
+    const rateLimitRemaining = response.headers.get('x-rate-limit-remaining');
+    const rateLimitReset = response.headers.get('x-rate-limit-reset');
+    
+    if (rateLimitRemaining) {
+      console.log(`Rate limit remaining: ${rateLimitRemaining}`);
+    }
+
     if (!response.ok) {
-      console.warn(`X API request failed: ${response.status}, using mock data`);
-      return getMockTweetsForSentiment(sentiment);
+      const errorText = await response.text();
+      console.warn(`X API request failed: ${response.status} ${response.statusText}`);
+      console.warn(`Error details: ${errorText}`);
+      console.warn(`Query used: ${query}`);
+      
+      if (response.status === 429 && rateLimitReset) {
+        const resetTime = new Date(parseInt(rateLimitReset) * 1000);
+        console.warn(`Rate limit exceeded. Resets at: ${resetTime.toLocaleString()}`);
+        console.warn(`Please wait before making more requests.`);
+      }
+      
+      console.warn(`Using mock data instead`);
+      return getMockTweetsForSentiment(topic, sentiment);
     }
 
     const data = await response.json();
@@ -207,7 +203,7 @@ export async function fetchStructuredTweetsForEvidence(
 
     if (!validatedData.data || validatedData.data.length === 0) {
       console.warn(`No tweets found for ${sentiment} sentiment, using mock data`);
-      return getMockTweetsForSentiment(sentiment);
+      return getMockTweetsForSentiment(topic, sentiment);
     }
 
     // Map tweets to structured format
@@ -215,7 +211,7 @@ export async function fetchStructuredTweetsForEvidence(
     const userMap = new Map(users.map(user => [user.id, user]));
 
     const structuredTweets = validatedData.data.map((tweet: Tweet) => {
-      const user = userMap.get(tweet.id) || { name: 'Unknown', username: 'unknown' };
+      const user = userMap.get(tweet.author_id || '') || { name: 'Unknown', username: 'unknown' };
       
       return {
         id: tweet.id,
@@ -229,67 +225,101 @@ export async function fetchStructuredTweetsForEvidence(
       };
     });
 
+    // Slice to return only the requested number of tweets
+    const limitedTweets = structuredTweets.slice(0, maxResults);
+    
     // Cache the results
-    await setCachedData(topic, structuredTweets, cacheKey);
-    console.log(`✓ Fetched and cached ${structuredTweets.length} ${sentiment} tweets for ${topic}`);
+    await setCachedData(topic, limitedTweets, cacheKey);
+    console.log(`✓ Fetched and cached ${limitedTweets.length} ${sentiment} tweets for ${topic}`);
 
-    return structuredTweets;
+    return limitedTweets;
   } catch (error) {
     console.error(`Error fetching ${sentiment} tweets for ${topic}:`, error);
-    return getMockTweetsForSentiment(sentiment);
+    return getMockTweetsForSentiment(topic, sentiment);
   }
 }
 
 /**
  * Get mock tweets for demonstration when X API is not available
+ * Now generates unique tweets based on the topic
  */
-function getMockTweetsForSentiment(sentiment: 'hype' | 'backlash'): StructuredTweet[] {
+function getMockTweetsForSentiment(topic: string, sentiment: 'hype' | 'backlash'): StructuredTweet[] {
+  // Create a simple hash from the topic to make IDs unique
+  const topicHash = topic.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  
+  // Different mock data templates based on topic keywords
+  const topicLower = topic.toLowerCase();
+  
   if (sentiment === 'hype') {
-    return [
+    const hypeTemplates = [
       {
-        id: "mock_hype_1",
-        text: "This is absolutely incredible! The energy in SF is electric. So many innovative companies showcasing the future of tech.",
+        text: `${topic} is absolutely incredible! The energy in SF is electric. This is what makes our city special.`,
         author: "Sarah Chen",
         username: "sarahchen_tech",
-        timestamp: new Date().toISOString(),
         likes: 1247,
-        retweets: 89,
-        sentiment: 'hype'
+        retweets: 89
       },
       {
-        id: "mock_hype_2",
-        text: "Just walked through and wow! The city feels alive with possibility. This is why SF is the heart of innovation.",
+        text: `Just experienced ${topic} and wow! The city feels alive with possibility. This is why SF is the heart of innovation.`,
         author: "Mike Rodriguez",
         username: "mike_rodriguez",
-        timestamp: new Date().toISOString(),
         likes: 892,
-        retweets: 156,
-        sentiment: 'hype'
-      }
-    ];
-  } else {
-    return [
-      {
-        id: "mock_backlash_1",
-        text: "This has completely taken over SF. Can't even walk down the street without being overwhelmed. The city doesn't feel like ours anymore.",
-        author: "Maria Santos",
-        username: "maria_sf_local",
-        timestamp: new Date().toISOString(),
-        likes: 2156,
-        retweets: 423,
-        sentiment: 'backlash'
+        retweets: 156
       },
       {
-        id: "mock_backlash_2",
-        text: "Hotel prices are insane because of this. $800/night for a basic room? This is pricing out regular people from their own city.",
-        author: "David Park",
-        username: "davidpark_sf",
-        timestamp: new Date().toISOString(),
-        likes: 1876,
-        retweets: 312,
-        sentiment: 'backlash'
+        text: `${topic} really showcases the best of SF. Amazing community energy and innovation on display!`,
+        author: "Alex Kim",
+        username: "alexkim_sf",
+        likes: 654,
+        retweets: 78
       }
     ];
+    
+    return hypeTemplates.map((template, i) => ({
+      id: `${topicHash}_hype_${i + 1}`,
+      text: template.text,
+      author: template.author,
+      username: template.username,
+      timestamp: new Date().toISOString(),
+      likes: template.likes,
+      retweets: template.retweets,
+      sentiment: 'hype'
+    }));
+  } else {
+    const backlashTemplates = [
+      {
+        text: `${topic} has completely taken over SF. Can't even walk down the street without being overwhelmed. The city doesn't feel like ours anymore.`,
+        author: "Maria Santos",
+        username: "maria_sf_local",
+        likes: 2156,
+        retweets: 423
+      },
+      {
+        text: `The disruption from ${topic} is pricing out regular people. Hotel prices through the roof, streets impassable. This isn't sustainable.`,
+        author: "David Park",
+        username: "davidpark_sf",
+        likes: 1876,
+        retweets: 312
+      },
+      {
+        text: `Tired of ${topic} taking priority over actual residents. SF needs to remember who lives here year-round.`,
+        author: "Jamie Lee",
+        username: "jamielee_local",
+        likes: 1432,
+        retweets: 267
+      }
+    ];
+    
+    return backlashTemplates.map((template, i) => ({
+      id: `${topicHash}_backlash_${i + 1}`,
+      text: template.text,
+      author: template.author,
+      username: template.username,
+      timestamp: new Date().toISOString(),
+      likes: template.likes,
+      retweets: template.retweets,
+      sentiment: 'backlash'
+    }));
   }
 }
 

@@ -1,60 +1,36 @@
 'use client';
 
-interface Tweet {
-  id: string;
-  text: string;
-  author: string;
-  username: string;
-  timestamp: string;
-  likes: number;
-  retweets: number;
-  sentiment: 'hype' | 'backlash';
-}
+import { formatTimestamp, formatNumber } from '@/lib/utils';
+import { componentStyles, colors } from '@/lib/design-system';
+import type { Tweet, TweetCardProps } from '@/lib/types';
 
-interface TweetCardProps {
-  tweet: Tweet;
-}
-
+/**
+ * TweetCard Component
+ * 
+ * Displays a single tweet with author info, content, and engagement metrics
+ */
 export default function TweetCard({ tweet }: TweetCardProps) {
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const formatNumber = (num: number) => {
-    if (num >= 1000) {
-      return `${(num / 1000).toFixed(1)}K`;
-    }
-    return num.toString();
-  };
+  const isHype = tweet.sentiment === 'hype';
+  const cardStyles = isHype 
+    ? 'bg-green-50 border-green-200 hover:bg-green-100' 
+    : 'bg-red-50 border-red-200 hover:bg-red-100';
+  
+  const avatarStyles = isHype 
+    ? 'bg-green-200 text-green-800' 
+    : 'bg-red-200 text-red-800';
 
   return (
-    <div className={`
-      p-4 rounded-lg border transition-all duration-200 hover:shadow-sm
-      ${tweet.sentiment === 'hype' 
-        ? 'bg-green-50 border-green-200 hover:bg-green-100' 
-        : 'bg-red-50 border-red-200 hover:bg-red-100'
-      }
-    `}>
-      <div className="flex items-start gap-3">
+    <div className={`p-2.5 rounded-lg border transition-all duration-200 hover:shadow-sm ${cardStyles}`}>
+      <div className="flex items-start gap-2">
         {/* Avatar */}
-        <div className={`
-          w-8 h-8 rounded-full flex items-center justify-center text-xs font-mono font-bold
-          ${tweet.sentiment === 'hype' 
-            ? 'bg-green-200 text-green-800' 
-            : 'bg-red-200 text-red-800'
-          }
-        `}>
+        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-mono font-bold ${avatarStyles}`}>
           {tweet.author.charAt(0).toUpperCase()}
         </div>
         
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm font-mono font-bold text-gray-800">
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <span className="text-xs font-mono font-bold text-gray-800">
               {tweet.author}
             </span>
             <span className="text-xs font-mono text-gray-500">
@@ -65,12 +41,12 @@ export default function TweetCard({ tweet }: TweetCardProps) {
             </span>
           </div>
           
-          <p className="text-sm font-mono text-gray-700 leading-relaxed mb-2">
+          <p className="text-xs font-mono text-gray-700 leading-relaxed mb-1.5">
             {tweet.text}
           </p>
           
           {/* Engagement */}
-          <div className="flex items-center gap-4 text-xs font-mono text-gray-500">
+          <div className="flex items-center gap-3 text-xs font-mono text-gray-500">
             <span>{formatNumber(tweet.likes)} likes</span>
             <span>{formatNumber(tweet.retweets)} retweets</span>
           </div>

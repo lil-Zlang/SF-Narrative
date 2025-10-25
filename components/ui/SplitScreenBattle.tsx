@@ -44,6 +44,7 @@ export default function SplitScreenBattle({
   const [userSentiment, setUserSentiment] = useState({ hype: 50, backlash: 50 });
   const [showSentimentGauge, setShowSentimentGauge] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [currentCommunitySentiment, setCurrentCommunitySentiment] = useState(communitySentiment);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const formatDate = (date: Date) => {
@@ -93,7 +94,7 @@ export default function SplitScreenBattle({
       const result = await response.json();
       if (result.success) {
         // Update community sentiment with real data
-        setCommunitySentiment(result.communitySentiment);
+        setCurrentCommunitySentiment(result.communitySentiment);
         console.log(`Vote saved! Community sentiment: ${result.communitySentiment.hype}% hype, ${result.communitySentiment.backlash}% backlash (${result.totalVotes} total votes)`);
       }
     } catch (error) {
@@ -167,14 +168,14 @@ export default function SplitScreenBattle({
       {showSentimentGauge && (
         <SentimentGauge 
           userSentiment={userSentiment}
-          communitySentiment={communitySentiment}
+          communitySentiment={currentCommunitySentiment}
         />
       )}
 
       {/* Split Screen Battlefield - More Compact */}
       <div 
         ref={containerRef}
-        className="relative h-80 border-clean overflow-hidden cursor-col-resize"
+        className="relative h-56 border-clean overflow-hidden cursor-col-resize"
         onMouseDown={handleMouseDown}
       >
         {/* Hype Side (Green) */}
@@ -182,20 +183,20 @@ export default function SplitScreenBattle({
           className="absolute top-0 left-0 h-full bg-green-50 border-r-2 border-green-200 transition-all duration-100"
           style={{ width: `${sliderPosition}%` }}
         >
-          <div className="p-4 h-full overflow-y-auto">
-            <div className="mb-2">
-              <span className="text-xs font-mono font-bold text-green-700 bg-green-200 px-2 py-1">
+          <div className="p-3 h-full overflow-y-auto">
+            <div className="mb-1.5">
+              <span className="text-xs font-mono font-bold text-green-700 bg-green-200 px-2 py-0.5">
                 HYPE NARRATIVE
               </span>
             </div>
             
             {contentToShow.left.type === 'summary' ? (
-              <p className="text-sm font-mono text-gray-800 leading-snug">
+              <p className="text-xs font-mono text-gray-800 leading-relaxed">
                 {contentToShow.left.content}
               </p>
             ) : (
-              <div className="space-y-2">
-                <p className="text-xs font-mono text-green-600 mb-2">
+              <div className="space-y-1.5">
+                <p className="text-xs font-mono text-green-600 mb-1">
                   Evidence Layer: Pro-tweets
                 </p>
                 {(contentToShow.left.content as Tweet[]).slice(0, 3).map((tweet) => (
@@ -211,20 +212,20 @@ export default function SplitScreenBattle({
           className="absolute top-0 right-0 h-full bg-red-50 border-l-2 border-red-200 transition-all duration-100"
           style={{ width: `${100 - sliderPosition}%` }}
         >
-          <div className="p-4 h-full overflow-y-auto">
-            <div className="mb-2">
-              <span className="text-xs font-mono font-bold text-red-700 bg-red-200 px-2 py-1">
+          <div className="p-3 h-full overflow-y-auto">
+            <div className="mb-1.5">
+              <span className="text-xs font-mono font-bold text-red-700 bg-red-200 px-2 py-0.5">
                 BACKLASH NARRATIVE
               </span>
             </div>
             
             {contentToShow.right.type === 'summary' ? (
-              <p className="text-sm font-mono text-gray-800 leading-snug">
+              <p className="text-xs font-mono text-gray-800 leading-relaxed">
                 {contentToShow.right.content}
               </p>
             ) : (
-              <div className="space-y-2">
-                <p className="text-xs font-mono text-red-600 mb-2">
+              <div className="space-y-1.5">
+                <p className="text-xs font-mono text-red-600 mb-1">
                   Evidence Layer: Anti-tweets
                 </p>
                 {(contentToShow.right.content as Tweet[]).slice(0, 3).map((tweet) => (
@@ -256,7 +257,7 @@ export default function SplitScreenBattle({
         <div className="px-6 py-5">
           <div className="flex items-center justify-between mb-4">
             <span className="text-xs font-mono font-bold text-gray-600 bg-gray-100 px-2 py-1">
-              POST-BATTLE ANALYSIS
+              AI ANALYSIS
             </span>
             <button
               onClick={() => setIsChatbotOpen(true)}

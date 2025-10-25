@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { fetchTweetsForTopic, combineTweetsForAnalysis, fetchStructuredTweetsForEvidence } from '@/lib/x-api';
+import { fetchTweetsForTopic, combineTweetsForAnalysis } from '@/lib/x-api';
+import { fetchTweetsEfficient } from '@/lib/x-api-efficient';
 import { analyzeNarrativesWithRetry } from '@/lib/llm';
 
 // Weekly topics to process
@@ -54,15 +55,11 @@ export async function POST(request: NextRequest) {
           await new Promise(resolve => setTimeout(resolve, 2000));
         }
 
-        // Step 1: Fetch structured tweets for evidence layer (OPTIMIZED - SINGLE FETCH!)
-        // Fetching 3 hype + 2 backlash = 5 tweets per topic
-        // These same tweets will be used for BOTH evidence layer AND LLM analysis
-        // Total: 9 topics × 5 tweets = 45 posts (45% of 100-post limit)
+        // Step 1: Fetch tweets EFFICIENTLY (1 API call instead of 2!)
+        // Fetch once and filter client-side by sentiment keywords
+        // This cuts API usage in HALF: 9 calls instead of 18 for all topics
         console.log(`Fetching tweets for ${topic}...`);
-        const [hypeTweets, backlashTweets] = await Promise.all([
-          fetchStructuredTweetsForEvidence(topic, 'hype', 3),
-          fetchStructuredTweetsForEvidence(topic, 'backlash', 2)
-        ]);
+        const { hypeTweets, backlashTweets } = await fetchTweetsEfficient(topic);
 
         if (hypeTweets.length === 0 && backlashTweets.length === 0) {
           console.warn(`No tweets found for ${topic}, skipping...`);
@@ -79,8 +76,8 @@ export async function POST(request: NextRequest) {
         // Step 2: Combine structured tweets for LLM analysis
         // Extract text from structured tweets for LLM
         const allTweetTexts = [
-          ...hypeTweets.map(t => t.text),
-          ...backlashTweets.map(t => t.text)
+          ...hypeTweets.map((t: any) => t.text),
+          ...backlashTweets.map((t: any) => t.text)
         ];
         const combinedTweets = combineTweetsForAnalysis(allTweetTexts);
 
@@ -106,9 +103,9 @@ export async function POST(request: NextRequest) {
             hypeSummary: analysis.hypeSummary,
             backlashSummary: analysis.backlashSummary,
             weeklyPulse: analysis.weeklyPulse,
-            hypeTweets: hypeTweets,
-            backlashTweets: backlashTweets,
-            communitySentiment: initialCommunitySentiment,
+            hypeTweets: hypeTweets as any,
+            backlashTweets: backlashTweets as any,
+            communitySentiment: initialCommunitySentiment as any,
             updatedAt: new Date(),
           },
           create: {
@@ -117,9 +114,9 @@ export async function POST(request: NextRequest) {
             hypeSummary: analysis.hypeSummary,
             backlashSummary: analysis.backlashSummary,
             weeklyPulse: analysis.weeklyPulse,
-            hypeTweets: hypeTweets,
-            backlashTweets: backlashTweets,
-            communitySentiment: initialCommunitySentiment,
+            hypeTweets: JSON.parse(JSON.stringify(hypeTweets)),
+            backlashTweets: JSON.parse(JSON.stringify(backlashTweets)),
+            communitySentiment: JSON.parse(JSON.stringify(initialCommunitySentiment)),
           },
         });
 

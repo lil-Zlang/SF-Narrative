@@ -1,16 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { API_CONFIG, UI_TEXT, UI_CONFIG, ERROR_MESSAGES } from '@/lib/constants';
+import { handleApiError, logError, createErrorResponse, handleExternalApiError } from '@/lib/error-handler';
+import type { ChatbotResponse } from '@/lib/types';
 
+/**
+ * POST /api/chatbot
+ * 
+ * Handles chatbot conversations with AI analysis
+ */
 export async function POST(request: NextRequest) {
   try {
     const { messages, contextData } = await request.json();
 
     if (!messages || !Array.isArray(messages)) {
-      return NextResponse.json({ success: false, error: 'Invalid messages format' }, { status: 400 });
+      throw createErrorResponse(
+        ERROR_MESSAGES.INVALID_MESSAGES_FORMAT,
+        'VALIDATION_FAILED',
+        400
+      );
     }
 
     const NOVITA_API_KEY = process.env.NOVITA_API_KEY;
     if (!NOVITA_API_KEY) {
-      return NextResponse.json({ success: false, error: 'API key not configured' }, { status: 500 });
+      throw createErrorResponse(
+        ERROR_MESSAGES.API_KEY_MISSING,
+        'API_KEY_MISSING',
+        500
+      );
     }
 
     // Build system prompt with context
@@ -36,7 +52,12 @@ Your role is to:
 5. Be thoughtful, nuanced, and avoid taking strong partisan positions
 6. When appropriate, highlight what's missing or oversimplified in the narratives
 
-Keep your responses concise (2-3 paragraphs max unless the user asks for more detail). Use clear, accessible language while maintaining analytical depth.`;
+IMPORTANT FORMATTING RULES:
+- Keep responses concise and use bullet points when appropriate
+- Do NOT include your thinking process or reasoning steps
+- Go straight to the answer
+- Use clear, accessible language while maintaining analytical depth
+- Keep response within ${UI_TEXT.CHATBOT_MAX_RESPONSE_LENGTH} characters`;
 
     // Prepare messages for the API
     const apiMessages = [
@@ -50,47 +71,66 @@ Keep your responses concise (2-3 paragraphs max unless the user asks for more de
     console.log('🤖 Calling DeepSeek API via Novita...');
 
     // Call Novita AI API with DeepSeek model
-    const response = await fetch('https://api.novita.ai/v3/openai/chat/completions', {
+    const response = await fetch(API_CONFIG.NOVITA_API_BASE_URL, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${NOVITA_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'deepseek/deepseek-chat',
+        model: 'deepseek/deepseek-r1-0528-qwen3-8b',
         messages: apiMessages,
-        max_tokens: 1000,
-        temperature: 0.7,
+        max_tokens: UI_CONFIG.CHATBOT_MAX_TOKENS,
+        temperature: UI_CONFIG.CHATBOT_TEMPERATURE,
         stream: false
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('DeepSeek API error:', errorText);
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      throw handleExternalApiError(
+        new Error(`DeepSeek API error: ${errorText}`),
+        'DeepSeek API',
+        response.status
+      );
     }
 
     const data = await response.json();
     
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      throw new Error('Invalid response format from DeepSeek API');
+      throw createErrorResponse(
+        'Invalid response format from DeepSeek API',
+        'API_INVALID_RESPONSE',
+        502
+      );
     }
 
-    const assistantMessage = data.choices[0].message.content;
+    let assistantMessage = data.choices[0].message.content;
+    
+    // Strip out thinking process tags if present (for R1 reasoning models)
+    if (assistantMessage.includes('<think>')) {
+      assistantMessage = assistantMessage.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    }
+    
     console.log('✓ DeepSeek response received');
 
-    return NextResponse.json({ 
+    const responseData: ChatbotResponse = { 
       success: true, 
       response: assistantMessage 
-    });
+    };
+
+    return NextResponse.json(responseData);
 
   } catch (error: any) {
-    console.error('Chatbot API error:', error);
-    return NextResponse.json({ 
+    const appError = handleApiError(error, 'Chatbot API');
+    logError(appError, 'Chatbot Route');
+    
+    const errorResponse: ChatbotResponse = { 
       success: false, 
-      error: error.message || 'Failed to process chatbot request' 
-    }, { status: 500 });
+      error: appError.message 
+    };
+    
+    return NextResponse.json(errorResponse, { status: appError.statusCode });
   }
 }
 

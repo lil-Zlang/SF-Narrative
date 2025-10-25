@@ -1,45 +1,17 @@
 'use client';
 
-import SplitScreenBattle from './ui/SplitScreenBattle';
+import { UI_CONFIG } from '@/lib/constants';
+import { SplitScreenBattle } from './ui/SplitScreenBattle';
+import type { TimelineEvent, TimelineEventCardProps } from '@/lib/types';
 
-interface TimelineEvent {
-  id: string;
-  headline: string;
-  weekOf: Date;
-  hypeSummary: string;
-  backlashSummary: string;
-  weeklyPulse: string;
-  hypeTweets?: any;
-  backlashTweets?: any;
-  communitySentiment?: any;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface TimelineEventCardProps {
-  event: TimelineEvent;
-}
-
+/**
+ * TimelineEventCard Component
+ * 
+ * Wrapper component that displays a single timeline event using the SplitScreenBattle
+ */
 export default function TimelineEventCard({ event }: TimelineEventCardProps) {
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
-  const formatWeek = (date: Date) => {
-    const d = new Date(date);
-    const year = d.getFullYear();
-    const month = d.getMonth() + 1;
-    const day = d.getDate();
-    return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-  };
-
   return (
     <div className="mb-12">
-      {/* Split Screen Battlefield */}
       <SplitScreenBattle
         eventId={event.id}
         headline={event.headline}
@@ -49,7 +21,7 @@ export default function TimelineEventCard({ event }: TimelineEventCardProps) {
         summary={event.weeklyPulse}
         hypeTweets={event.hypeTweets || []}
         backlashTweets={event.backlashTweets || []}
-        communitySentiment={event.communitySentiment || { hype: 60, backlash: 40 }}
+        communitySentiment={event.communitySentiment || UI_CONFIG.DEFAULT_COMMUNITY_SENTIMENT}
       />
     </div>
   );

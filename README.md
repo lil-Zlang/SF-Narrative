@@ -1,300 +1,211 @@
-# SF Narrative Battlefield
+# SF Narrative
 
-A Next.js application that displays a timeline of San Francisco-centric trending topics with LLM-powered analysis of competing narratives within each trend.
+A modern web application that explores San Francisco's trending topics through interactive narrative analysis, built with Next.js, TypeScript, and Tailwind CSS.
 
-## Features
+## 🚀 Features
 
-- 📊 Timeline view of SF trending topics
-- 🤖 AI-powered narrative analysis (hype vs backlash)
-- 🎨 Beautiful, modern UI with Tailwind CSS
-- 📱 Fully responsive design
-- ⚡ Built with Next.js 14+ App Router
-- 🗄️ PostgreSQL database via Vercel Postgres
-- 🔄 Automated data processing via Vercel Cron
+- **Interactive Timeline**: Explore SF events through a draggable split-screen interface
+- **AI-Powered Analysis**: Get deep insights into competing narratives using advanced LLM analysis
+- **Real-time Data**: Fetch and analyze tweets from X (Twitter) API
+- **Community Sentiment**: Track and visualize community voting on narrative positions
+- **Responsive Design**: Beautiful, mobile-first interface with consistent design system
 
-## Tech Stack
+## 🏗️ Architecture
 
-- **Framework**: Next.js 14+ (App Router)
+### Core Components
+
+- **SplitScreenBattle**: Main interactive component for exploring narratives
+- **TimelineEventCard**: Wrapper for individual timeline events
+- **ChatbotModal**: AI-powered conversation interface
+- **TweetCard**: Displays individual tweets with engagement metrics
+
+### Design System
+
+The application uses a comprehensive design system with:
+- **Consistent Typography**: JetBrains Mono font family
+- **Color Palette**: Semantic colors for success, error, and neutral states
+- **Component Styles**: Reusable button, input, and card styles
+- **Spacing Scale**: Consistent spacing and sizing throughout
+
+### Error Handling
+
+Centralized error handling with:
+- **Custom Error Classes**: `AppError` for application-specific errors
+- **Error Codes**: Consistent error identification and handling
+- **Logging**: Structured error logging with context
+- **User-Friendly Messages**: Clear error messages for users
+
+## 📁 Project Structure
+
+```
+├── app/                    # Next.js app directory
+│   ├── api/               # API routes
+│   │   ├── chatbot/       # Chatbot API endpoint
+│   │   ├── cron/          # Scheduled tasks
+│   │   └── vote/          # Voting API endpoint
+│   ├── globals.css        # Global styles
+│   ├── layout.tsx         # Root layout
+│   └── page.tsx           # Home page
+├── components/            # React components
+│   ├── ui/               # UI components
+│   │   ├── SplitScreenBattle/  # Main battle component
+│   │   ├── ChatbotModal.tsx    # Chat interface
+│   │   ├── TweetCard.tsx       # Tweet display
+│   │   └── ...                 # Other UI components
+│   └── TimelineEventCard.tsx   # Event wrapper
+├── lib/                   # Utility libraries
+│   ├── constants.ts       # Application constants
+│   ├── types.ts          # TypeScript type definitions
+│   ├── design-system.ts  # Design system constants
+│   ├── utils.ts          # Utility functions
+│   ├── error-handler.ts  # Error handling utilities
+│   ├── x-api.ts          # X (Twitter) API integration
+│   ├── llm.ts            # LLM API integration
+│   └── prisma.ts         # Database client
+├── prisma/               # Database schema and migrations
+└── scripts/              # Utility scripts
+```
+
+## 🛠️ Technology Stack
+
+- **Framework**: Next.js 16 with App Router
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
-- **Database**: Vercel Postgres
-- **ORM**: Prisma
-- **APIs**: X (Twitter) API, Novita LLM API
+- **Database**: PostgreSQL with Prisma ORM
+- **APIs**: X (Twitter) API, Novita AI API
 - **Deployment**: Vercel
-- **Validation**: Zod
-
-## Project Structure
 
-```
-SF-Narrative/
-├── app/
-│   ├── api/
-│   │   └── cron/
-│   │       └── process-trends/
-│   │           └── route.ts          # Cron job API endpoint
-│   ├── layout.tsx                    # Root layout
-│   ├── page.tsx                      # Main timeline page
-│   └── globals.css                   # Global styles
-├── components/
-│   ├── TimelineEventCard.tsx         # Timeline event card component
-│   └── BattlefieldModal.tsx          # Narrative comparison modal
-├── lib/
-│   ├── prisma.ts                     # Prisma client singleton
-│   ├── x-api.ts                      # X API integration
-│   └── llm.ts                        # Novita LLM integration
-├── prisma/
-│   └── schema.prisma                 # Database schema
-├── .env                              # Environment variables (not in git)
-├── .env.example                      # Environment variables template
-└── vercel.json                       # Vercel configuration with cron
-
-```
-
-## Setup Instructions
-
-### 1. Install Dependencies
-
-```bash
-npm install
-```
-
-### 2. Configure Environment Variables
-
-Copy `.env.example` to `.env` and fill in your API credentials:
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+ 
+- PostgreSQL database
+- X (Twitter) API credentials
+- Novita AI API key
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-username/sf-narrative.git
+   cd sf-narrative
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Add your API keys and database URL to `.env`:
+   ```env
+   POSTGRES_PRISMA_URL="your_postgres_url"
+   POSTGRES_URL="your_postgres_url"
+   X_BEARER_TOKEN="your_twitter_bearer_token"
+   NOVITA_API_KEY="your_novita_api_key"
+   ```
 
-```bash
-cp .env.example .env
-```
+4. **Set up the database**
+   ```bash
+   npx prisma migrate dev
+   npx prisma generate
+   ```
 
-Required environment variables:
+5. **Run the development server**
+   ```bash
+   npm run dev
+   ```
 
-```env
-# Vercel Postgres (Get from Vercel Dashboard)
-POSTGRES_URL="your-vercel-postgres-url"
-POSTGRES_PRISMA_URL="your-vercel-postgres-prisma-url"
+6. **Open your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
 
-# X API Credentials (Get from Twitter Developer Portal)
-X_API_KEY="your-x-api-key"
-X_API_SECRET="your-x-api-secret"
-X_BEARER_TOKEN="your-x-bearer-token"
+## 📊 Data Flow
 
-# Novita LLM API (Get from Novita AI)
-NOVITA_API_KEY="your-novita-api-key"
+1. **Event Creation**: Cron job fetches trending topics and creates timeline events
+2. **Tweet Analysis**: X API provides tweet data for narrative analysis
+3. **LLM Processing**: AI analyzes tweets to generate hype/backlash narratives
+4. **User Interaction**: Users explore narratives through the split-screen interface
+5. **Voting System**: Community sentiment is tracked and visualized
+6. **AI Chat**: Users can ask questions about events through the chatbot
 
-# Cron Job Security (Generate a random secret)
-CRON_SECRET="your-random-secret-string"
-```
+## 🎨 Design Principles
 
-### 3. Setup Database
-
-Generate Prisma Client and push the schema to your database:
+### Consistency
+- All components use the same design system
+- Consistent naming conventions throughout
+- Standardized error handling and logging
 
-```bash
-npx prisma generate
-npx prisma db push
-```
+### Accessibility
+- Semantic HTML structure
+- Keyboard navigation support
+- Screen reader friendly
 
-### 4. Run Development Server
+### Performance
+- Optimized API calls with caching
+- Lazy loading for large datasets
+- Efficient state management
 
-```bash
-npm run dev
-```
+### Maintainability
+- Modular component architecture
+- Comprehensive TypeScript types
+- Clear separation of concerns
 
-Open [http://localhost:3000](http://localhost:3000) to view the application.
+## 🔧 Development
 
-## Database Schema
+### Code Style
+- Use TypeScript for all new code
+- Follow the established naming conventions
+- Add JSDoc comments for all functions
+- Use the design system for styling
 
-The application uses a single `TimelineEvent` table:
+### Testing
+- Write unit tests for utility functions
+- Add integration tests for API routes
+- Test component behavior with user interactions
 
-```prisma
-model TimelineEvent {
-  id              String   @id @default(cuid())
-  headline        String   // The main topic (e.g., "#FleetWeek")
-  weekOf          DateTime @unique // Monday of the week
-  hypeSummary     String   @db.Text // Positive narrative
-  backlashSummary String   @db.Text // Negative narrative
-  weeklyPulse     String   @db.Text // City mood summary
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-```
-
-## How It Works
+### Error Handling
+- Use the centralized error handling system
+- Log errors with appropriate context
+- Provide user-friendly error messages
 
-### Data Processing Pipeline
+## 📈 Performance
 
-1. **Cron Job** (`/api/cron/process-trends`)
-   - Runs weekly (Mondays at midnight UTC)
-   - Secured with `CRON_SECRET` authorization
-   - Processes predefined weekly topics
+- **API Optimization**: Cached responses and efficient queries
+- **Bundle Size**: Tree-shaking and code splitting
+- **Rendering**: Optimized React components with proper memoization
+- **Database**: Indexed queries and connection pooling
 
-2. **Tweet Fetching** (`lib/x-api.ts`)
-   - Fetches 100-200 tweets per topic from X API
-   - Filters for SF-related content
-   - Sorts by relevancy
+## 🚀 Deployment
 
-3. **LLM Analysis** (`lib/llm.ts`)
-   - Sends combined tweets to Novita LLM
-   - Analyzes for competing narratives:
-     - **Hype**: Positive, supportive viewpoints
-     - **Backlash**: Negative, critical viewpoints
-     - **Weekly Pulse**: Connection to city mood
+The application is configured for deployment on Vercel:
 
-4. **Database Storage** (`lib/prisma.ts`)
-   - Upserts results to PostgreSQL
-   - Updates existing entries or creates new ones
+1. **Connect your repository** to Vercel
+2. **Set environment variables** in the Vercel dashboard
+3. **Deploy** - Vercel will automatically build and deploy
 
-### Frontend Components
+## 🤝 Contributing
 
-- **Timeline Page** (`app/page.tsx`)
-  - Server Component fetching all events
-  - Displays events in chronological order
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-- **Timeline Event Card** (`components/TimelineEventCard.tsx`)
-  - Shows headline, date, and weekly pulse
-  - Clickable to open narrative comparison
+## 📝 License
 
-- **Battlefield Modal** (`components/BattlefieldModal.tsx`)
-  - Side-by-side comparison of hype vs backlash
-  - Beautiful gradient design with icons
+This project is licensed under the ISC License - see the [LICENSE](LICENSE) file for details.
 
-## API Endpoints
+## 🙏 Acknowledgments
 
-### POST `/api/cron/process-trends`
+- Built for the Week 3 #BuildInPublic Challenge
+- Inspired by San Francisco's dynamic cultural landscape
+- Powered by the X (Twitter) API and Novita AI
 
-Processes all weekly topics and updates the database.
+---
 
-**Authorization**: Bearer token (CRON_SECRET)
-
-**Response**:
-```json
-{
-  "success": true,
-  "processed": 9,
-  "failed": 0,
-  "results": [...],
-  "errors": [...]
-}
-```
-
-## Deployment to Vercel
-
-### 1. Push to GitHub
-
-```bash
-git add .
-git commit -m "Initial commit"
-git push origin main
-```
-
-### 2. Import to Vercel
-
-1. Go to [vercel.com](https://vercel.com)
-2. Click "New Project"
-3. Import your GitHub repository
-4. Configure environment variables in Vercel dashboard
-5. Deploy
-
-### 3. Setup Vercel Postgres
-
-1. In your Vercel project, go to "Storage"
-2. Create a new Postgres database
-3. Copy the connection strings to your environment variables
-4. Run `npx prisma db push` to create tables
-
-### 4. Configure Cron Job
-
-The `vercel.json` file configures a weekly cron job:
-
-```json
-{
-  "crons": [
-    {
-      "path": "/api/cron/process-trends",
-      "schedule": "0 0 * * 1"
-    }
-  ]
-}
-```
-
-Vercel will automatically authenticate cron requests using your `CRON_SECRET`.
-
-## Manual Testing
-
-### Trigger Cron Job Manually
-
-```bash
-curl -X POST https://your-domain.vercel.app/api/cron/process-trends \
-  -H "Authorization: Bearer YOUR_CRON_SECRET"
-```
-
-### View Database in Prisma Studio
-
-```bash
-npx prisma studio
-```
-
-## Weekly Topics
-
-The application currently processes these SF-centric topics:
-
-- Week of Sept 1, 2025: `#LaborDayWeekend`
-- Week of Sept 8, 2025: `#SuperFlexArtFest`
-- Week of Sept 15, 2025: `#SupervisorRecall`
-- Week of Sept 22, 2025: `#FolsomStreetFair`
-- Week of Sept 29, 2025: `#OpenStudios`
-- Week of Oct 6, 2025: `#FleetWeek`
-- Week of Oct 13, 2025: `#Dreamforce`
-- Week of Oct 20, 2025: `#TrumpSFSurge`
-- Week of Oct 27, 2025: `#HalloweenSF`
-
-To modify topics, edit the `weeklyTopics` array in `/app/api/cron/process-trends/route.ts`.
-
-## Development Scripts
-
-```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
-npx prisma generate  # Generate Prisma Client
-npx prisma db push   # Push schema to database
-npx prisma studio    # Open Prisma Studio
-```
-
-## Troubleshooting
-
-### Prisma Client Not Found
-
-Run: `npx prisma generate`
-
-### Environment Variables Not Loading
-
-Ensure `.env` file exists in root directory and contains all required variables.
-
-### Cron Job Fails
-
-1. Check Vercel logs for error messages
-2. Verify `CRON_SECRET` matches in both environment and request
-3. Ensure all API credentials are valid
-
-### No Tweets Found
-
-- Check X API credentials
-- Verify API rate limits haven't been exceeded
-- Ensure topics are recent and have tweets
-
-## Contributing
-
-This is a Week 3 #BuildInPublic challenge project. Feel free to fork and customize!
-
-## License
-
-ISC
-
-## Acknowledgments
-
-- Week 3 #BuildInPublic Challenge
-- Novita AI for LLM API
-- Vercel for hosting and database
-- X (Twitter) for data access
+**Built with ❤️ for San Francisco**
