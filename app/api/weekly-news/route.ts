@@ -17,11 +17,13 @@ export async function GET(request: NextRequest) {
     let weeklyNewsRecord;
 
     if (weekOfParam) {
-      // Fetch specific week
-      weeklyNewsRecord = await prisma.weeklyNews.findUnique({
-        where: {
-          weekOf: new Date(weekOfParam),
-        },
+      // Fetch specific week - find by matching the date part
+      const allWeeks = await prisma.weeklyNews.findMany();
+      const searchDate = weekOfParam.split('T')[0]; // Get YYYY-MM-DD part
+      
+      weeklyNewsRecord = allWeeks.find(week => {
+        const weekDate = week.weekOf.toISOString().split('T')[0];
+        return weekDate === searchDate;
       });
     } else {
       // Fetch latest week

@@ -221,28 +221,11 @@ export default function HomeClient({ events, weeklyNews: initialWeeklyNews, erro
             </p>
           </div>
 
-          {/* Tab Navigation */}
-          <div className="mb-8 flex gap-4 border-b border-gray-300">
-            <button
-              onClick={() => setActiveTab('news')}
-              className={`px-6 py-3 font-mono font-bold text-sm transition-colors ${
-                activeTab === 'news'
-                  ? 'border-b-2 border-black text-black'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
+          {/* Tab Navigation - Archive Hidden */}
+          <div className="mb-8 border-b border-gray-300">
+            <div className="px-6 py-3 font-mono font-bold text-sm border-b-2 border-black text-black inline-block">
               This Week's News
-            </button>
-            <button
-              onClick={() => setActiveTab('archive')}
-              className={`px-6 py-3 font-mono font-bold text-sm transition-colors ${
-                activeTab === 'archive'
-                  ? 'border-b-2 border-black text-black'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Archive
-            </button>
+            </div>
           </div>
 
           {/* This Week's News Tab */}

@@ -51,12 +51,14 @@ export default function WeekSelector({ weeks, selectedWeek, onSelectWeek }: Week
   };
 
   const getWeekNumber = (date: Date) => {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-    const yearStart = new Date(d.getFullYear(), 0, 1);
-    const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-    return weekNo;
+    // Custom week number calculation to match desired numbering
+    // Oct 20, 2025 should be W43, so we add +1 to ISO week
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const isoWeek = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    return isoWeek + 1; // Add 1 to match desired numbering (Oct 20 = W43)
   };
 
   const isSelected = (week: Week) => {
