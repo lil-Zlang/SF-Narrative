@@ -214,10 +214,10 @@ export default function HomeClient({ events, weeklyNews: initialWeeklyNews, erro
           {/* Header */}
           <div className="mb-16">
             <h1 className="text-4xl md:text-5xl font-mono font-bold mb-4">
-              Weekly News Digest
+              SF Weekly News Digest
             </h1>
             <p className="text-lg font-mono text-gray-600 max-w-2xl">
-              Your curated summary of the week's most important news across Tech, Politics, Economy, and SF Local.
+              AI summary of the week's most important news across Tech, Politics, Economy, and SF Local.
             </p>
           </div>
 

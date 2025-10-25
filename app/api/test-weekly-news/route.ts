@@ -16,17 +16,17 @@ export async function GET(request: NextRequest) {
       tech: null as CategoryNews | null,
       politics: null as CategoryNews | null,
       economy: null as CategoryNews | null,
-      sfLocal: null as CategoryNews | null,
+      'sf-local': null as CategoryNews | null,
     };
 
     // Step 1: Search and gather articles for each category using LLM
     console.log('Step 1: Searching for news with LLM...');
-    
+
     const categories = [
       { key: 'tech' as const },
       { key: 'politics' as const },
       { key: 'economy' as const },
-      { key: 'sfLocal' as const },
+      { key: 'sf-local' as const },
     ];
 
     const allKeywords: string[] = [];
@@ -114,25 +114,25 @@ export async function GET(request: NextRequest) {
         techBullets: JSON.parse(JSON.stringify(summaries.tech!.bullets)),
         techSources: JSON.parse(JSON.stringify(summaries.tech!.sources)),
         techKeywords: JSON.parse(JSON.stringify(summaries.tech!.keywords)),
-        
+
         politicsSummary: summaries.politics!.summaryShort,
         politicsDetailed: summaries.politics!.summaryDetailed,
         politicsBullets: JSON.parse(JSON.stringify(summaries.politics!.bullets)),
         politicsSources: JSON.parse(JSON.stringify(summaries.politics!.sources)),
         politicsKeywords: JSON.parse(JSON.stringify(summaries.politics!.keywords)),
-        
+
         economySummary: summaries.economy!.summaryShort,
         economyDetailed: summaries.economy!.summaryDetailed,
         economyBullets: JSON.parse(JSON.stringify(summaries.economy!.bullets)),
         economySources: JSON.parse(JSON.stringify(summaries.economy!.sources)),
         economyKeywords: JSON.parse(JSON.stringify(summaries.economy!.keywords)),
-        
-        sfLocalSummary: summaries.sfLocal!.summaryShort,
-        sfLocalDetailed: summaries.sfLocal!.summaryDetailed,
-        sfLocalBullets: JSON.parse(JSON.stringify(summaries.sfLocal!.bullets)),
-        sfLocalSources: JSON.parse(JSON.stringify(summaries.sfLocal!.sources)),
-        sfLocalKeywords: JSON.parse(JSON.stringify(summaries.sfLocal!.keywords)),
-        
+
+        sfLocalSummary: summaries['sf-local']!.summaryShort,
+        sfLocalDetailed: summaries['sf-local']!.summaryDetailed,
+        sfLocalBullets: JSON.parse(JSON.stringify(summaries['sf-local']!.bullets)),
+        sfLocalSources: JSON.parse(JSON.stringify(summaries['sf-local']!.sources)),
+        sfLocalKeywords: JSON.parse(JSON.stringify(summaries['sf-local']!.keywords)),
+
         weeklyKeywords: JSON.parse(JSON.stringify(allKeywords)),
         updatedAt: new Date(),
       },
@@ -156,12 +156,12 @@ export async function GET(request: NextRequest) {
         economySources: JSON.parse(JSON.stringify(summaries.economy!.sources)),
         economyKeywords: JSON.parse(JSON.stringify(summaries.economy!.keywords)),
         
-        sfLocalSummary: summaries.sfLocal!.summaryShort,
-        sfLocalDetailed: summaries.sfLocal!.summaryDetailed,
-        sfLocalBullets: JSON.parse(JSON.stringify(summaries.sfLocal!.bullets)),
-        sfLocalSources: JSON.parse(JSON.stringify(summaries.sfLocal!.sources)),
-        sfLocalKeywords: JSON.parse(JSON.stringify(summaries.sfLocal!.keywords)),
-        
+        sfLocalSummary: summaries['sf-local']!.summaryShort,
+        sfLocalDetailed: summaries['sf-local']!.summaryDetailed,
+        sfLocalBullets: JSON.parse(JSON.stringify(summaries['sf-local']!.bullets)),
+        sfLocalSources: JSON.parse(JSON.stringify(summaries['sf-local']!.sources)),
+        sfLocalKeywords: JSON.parse(JSON.stringify(summaries['sf-local']!.keywords)),
+
         weeklyKeywords: JSON.parse(JSON.stringify(allKeywords)),
       },
     });
@@ -186,9 +186,9 @@ export async function GET(request: NextRequest) {
           articlesCount: summaries.economy?.sources.length || 0,
           keywords: summaries.economy!.keywords,
         },
-        sfLocal: {
-          articlesCount: summaries.sfLocal?.sources.length || 0,
-          keywords: summaries.sfLocal!.keywords,
+        'sf-local': {
+          articlesCount: summaries['sf-local']?.sources.length || 0,
+          keywords: summaries['sf-local']!.keywords,
         },
       },
       allKeywords: allKeywords,
