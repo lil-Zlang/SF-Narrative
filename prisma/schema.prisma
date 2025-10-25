@@ -43,3 +43,44 @@ model UserVote {
   @@index([eventId])
   @@index([createdAt])
 }
+
+model WeeklyNews {
+  id              String   @id @default(cuid())
+  weekOf          DateTime @unique // The Monday of the week this news represents
+  
+  // Tech News
+  techSummary     String   @db.Text // Short summary for card view
+  techDetailed    String   @db.Text // Detailed narrative for expanded view
+  techBullets     Json     // Array of bullet points
+  techSources     Json     // Array of NewsArticle objects
+  techKeywords    Json     // Array of keywords
+  
+  // Politics News
+  politicsSummary String   @db.Text
+  politicsDetailed String  @db.Text
+  politicsBullets Json
+  politicsSources Json
+  politicsKeywords Json
+  
+  // Economy News
+  economySummary  String   @db.Text
+  economyDetailed String   @db.Text
+  economyBullets  Json
+  economySources  Json
+  economyKeywords Json
+  
+  // SF Local News
+  sfLocalSummary  String   @db.Text
+  sfLocalDetailed String   @db.Text
+  sfLocalBullets  Json
+  sfLocalSources  Json
+  sfLocalKeywords Json
+  
+  // Aggregated weekly keywords for timeline
+  weeklyKeywords  Json     // Array of all keywords combined
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([weekOf])
+}

@@ -83,6 +83,7 @@ Centralized error handling with:
 - PostgreSQL database
 - X (Twitter) API credentials
 - Novita AI API key
+- NewsAPI.org key (optional, for real-time news - free tier available)
 
 ### Installation
 
@@ -108,6 +109,7 @@ Centralized error handling with:
    POSTGRES_URL="your_postgres_url"
    X_BEARER_TOKEN="your_twitter_bearer_token"
    NOVITA_API_KEY="your_novita_api_key"
+   NEWSAPI_KEY="your_newsapi_key"  # Optional: Get free key from https://newsapi.org/
    ```
 
 4. **Set up the database**
@@ -132,6 +134,60 @@ Centralized error handling with:
 4. **User Interaction**: Users explore narratives through the split-screen interface
 5. **Voting System**: Community sentiment is tracked and visualized
 6. **AI Chat**: Users can ask questions about events through the chatbot
+
+## 📰 Weekly News Feature
+
+The application includes a hyper-local weekly news aggregation system that fetches **San Francisco-specific news only** from Oct 20, 2025 onwards:
+
+### 🌉 SF-Focused Design
+
+**ALL categories filter exclusively for San Francisco, Bay Area, and Silicon Valley news:**
+- ✅ Triple filtering: API queries + keyword detection + LLM verification
+- ✅ 20+ SF location keywords (San Francisco, Bay Area, BART, etc.)
+- ✅ AI summaries emphasize local impact for SF residents
+
+### News Sources
+
+1. **NewsAPI.org** (Primary): Real-time SF-filtered news from major sources
+   - Free tier: 100 requests/day
+   - Filtered for SF/Bay Area relevance
+   - Sign up at [newsapi.org](https://newsapi.org/) for free API key
+
+2. **Google News RSS** (Fallback): Free, unlimited SF-filtered RSS
+   - No API key required
+   - Automatically used if NewsAPI is unavailable
+
+### API Endpoints
+
+- `GET /api/weekly-news` - Fetch latest SF-focused weekly news
+- `GET /api/seed-weekly-news-real` - Fetch fresh SF news from APIs (Oct 20+ only)
+- `GET /api/seed-weekly-news` - Generate mock data for testing
+
+### News Categories (All SF-Specific)
+
+- **Tech**: SF tech companies, Bay Area startups, Silicon Valley developments (TechCrunch, SF Chronicle, etc.)
+- **Politics**: SF city policies, California state politics, Bay Area legislation (SF Standard, CalMatters, etc.)
+- **Economy**: SF housing market, Bay Area business, local job market (SF Chronicle, Bloomberg Bay Area, etc.)
+- **SF Local**: San Francisco community, BART updates, local events (SF Chronicle, SF Standard, SF Gate, etc.)
+
+### Date Filtering & SF Relevance
+
+All news is strictly filtered to only include articles published on or after **October 20, 2025** that are **San Francisco-relevant**. The system:
+- Validates published dates from news sources (Oct 20+ only)
+- Filters for SF keywords (San Francisco, Bay Area, Silicon Valley, etc.)
+- Excludes articles with missing dates or non-SF content
+- Verifies each article mentions SF/Bay Area in title or snippet
+- Ensures hyper-local focus for SF residents
+
+### Usage
+
+```bash
+# Fetch real weekly news (recommended)
+curl http://localhost:3000/api/seed-weekly-news-real
+
+# Fetch cached weekly news
+curl http://localhost:3000/api/weekly-news
+```
 
 ## 🎨 Design Principles
 

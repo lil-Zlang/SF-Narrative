@@ -15,8 +15,6 @@ export const API_CONFIG = {
 
 // UI Configuration
 export const UI_CONFIG = {
-  SLIDER_THRESHOLD: 20, // Percentage threshold for showing tweets
-  DEFAULT_SLIDER_POSITION: 50,
   DEFAULT_SENTIMENT: { hype: 50, backlash: 50 },
   DEFAULT_COMMUNITY_SENTIMENT: { hype: 60, backlash: 40 },
   CHATBOT_MAX_TOKENS: 1000,
@@ -74,7 +72,6 @@ export const UI_TEXT = {
   APP_DESCRIPTION: 'Explore San Francisco\'s trending topics through X',
   HYPE_NARRATIVE_LABEL: 'POSITIVE NARRATIVE',
   BACKLASH_NARRATIVE_LABEL: 'NEGATIVE NARRATIVE',
-  DRAG_INSTRUCTION: 'DRAG TO EXPLORE NARRATIVES',
   AI_ANALYSIS_LABEL: 'AI ANALYSIS',
   ASK_QUESTIONS_BUTTON: '💬 ASK QUESTIONS',
   EVIDENCE_LAYER_PRO: 'Evidence Layer: Pro-tweets',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import TweetCard from './TweetCard';
 import SentimentGauge from './SentimentGauge';
 import ChatbotModal from './ChatbotModal';
@@ -39,13 +39,11 @@ export default function SplitScreenBattle({
   backlashTweets = [],
   communitySentiment = { hype: 60, backlash: 40 }
 }: SplitScreenBattleProps) {
-  const [sliderPosition, setSliderPosition] = useState(50); // 0-100 percentage
-  const [isDragging, setIsDragging] = useState(false);
   const [userSentiment, setUserSentiment] = useState({ hype: 50, backlash: 50 });
   const [showSentimentGauge, setShowSentimentGauge] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [currentCommunitySentiment, setCurrentCommunitySentiment] = useState(communitySentiment);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [showTweets, setShowTweets] = useState(false);
 
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -54,30 +52,10 @@ export default function SplitScreenBattle({
     });
   };
 
-  const handleMouseDown = () => {
-    setIsDragging(true);
-  };
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging || !containerRef.current) return;
-    
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
-    setSliderPosition(percentage);
-  };
-
-  const handleMouseUp = async () => {
-    setIsDragging(false);
-    // Update user sentiment based on final position
-    const newUserSentiment = {
-      hype: sliderPosition,
-      backlash: 100 - sliderPosition
-    };
-    setUserSentiment(newUserSentiment);
-    setShowSentimentGauge(true);
-
-    // Save user vote to database
+  /**
+   * Handle vote submission
+   */
+  const handleVote = async (sentiment: {hype: number; backlash: number}) => {
     try {
       const response = await fetch('/api/vote', {
         method: 'POST',
@@ -85,60 +63,26 @@ export default function SplitScreenBattle({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          eventId: eventId,
-          hypePercentage: sliderPosition,
-          backlashPercentage: 100 - sliderPosition
-        })
+          eventId,
+          sentiment
+        }),
       });
 
-      const result = await response.json();
-      if (result.success) {
-        // Update community sentiment with real data
-        setCurrentCommunitySentiment(result.communitySentiment);
-        console.log(`Vote saved! Community sentiment: ${result.communitySentiment.hype}% hype, ${result.communitySentiment.backlash}% backlash (${result.totalVotes} total votes)`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.communitySentiment) {
+          setCurrentCommunitySentiment(result.communitySentiment);
+        }
+        setUserSentiment(sentiment);
+        setShowSentimentGauge(true);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save vote');
       }
     } catch (error) {
       console.error('Failed to save vote:', error);
     }
   };
-
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDragging]);
-
-  // Determine what content to show based on slider position
-  const getContentToShow = () => {
-    const threshold = 20; // Percentage threshold for showing tweets
-    
-    if (sliderPosition < (50 - threshold)) {
-      // Show backlash tweets
-      return {
-        left: { type: 'summary', content: hypeContent },
-        right: { type: 'tweets', content: backlashTweets }
-      };
-    } else if (sliderPosition > (50 + threshold)) {
-      // Show hype tweets
-      return {
-        left: { type: 'tweets', content: hypeTweets },
-        right: { type: 'summary', content: backlashContent }
-      };
-    } else {
-      // Show summaries
-      return {
-        left: { type: 'summary', content: hypeContent },
-        right: { type: 'summary', content: backlashContent }
-      };
-    }
-  };
-
-  const contentToShow = getContentToShow();
 
   const contextData = {
     headline,
@@ -172,85 +116,83 @@ export default function SplitScreenBattle({
         />
       )}
 
-      {/* Split Screen Battlefield - More Compact */}
-      <div 
-        ref={containerRef}
-        className="relative h-56 border-clean overflow-hidden cursor-col-resize"
-        onMouseDown={handleMouseDown}
-      >
-        {/* Hype Side (Green) */}
-        <div 
-          className="absolute top-0 left-0 h-full bg-green-50 border-r-2 border-green-200 transition-all duration-100"
-          style={{ width: `${sliderPosition}%` }}
-        >
-          <div className="p-3 h-full overflow-y-auto">
-            <div className="mb-1.5">
-              <span className="text-xs font-mono font-bold text-green-700 bg-green-200 px-2 py-0.5">
-                POSITIVE NARRATIVE
-              </span>
-            </div>
-            
-            {contentToShow.left.type === 'summary' ? (
-              <p className="text-xs font-mono text-gray-800 leading-relaxed">
-                {contentToShow.left.content as string}
-              </p>
-            ) : (
-              <div className="space-y-1.5">
-                <p className="text-xs font-mono text-green-600 mb-1">
-                  Evidence Layer: Pro-tweets
-                </p>
-                {(contentToShow.left.content as Tweet[]).slice(0, 3).map((tweet) => (
-                  <TweetCard key={tweet.id} tweet={tweet} />
-                ))}
+      {/* Narratives Display */}
+      <div className="border-clean overflow-hidden">
+        <div className="grid grid-cols-2 h-56">
+          {/* Positive Narrative */}
+          <div className="bg-green-50 border-r-2 border-green-200">
+            <div className="p-3 h-full overflow-y-auto">
+              <div className="mb-1.5">
+                <span className="text-xs font-mono font-bold text-green-700 bg-green-200 px-2 py-0.5">
+                  POSITIVE NARRATIVE
+                </span>
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Backlash Side (Red) */}
-        <div 
-          className="absolute top-0 right-0 h-full bg-red-50 border-l-2 border-red-200 transition-all duration-100"
-          style={{ width: `${100 - sliderPosition}%` }}
-        >
-          <div className="p-3 h-full overflow-y-auto">
-            <div className="mb-1.5">
-              <span className="text-xs font-mono font-bold text-red-700 bg-red-200 px-2 py-0.5">
-                NEGATIVE NARRATIVE
-              </span>
-            </div>
-            
-            {contentToShow.right.type === 'summary' ? (
               <p className="text-xs font-mono text-gray-800 leading-relaxed">
-                {contentToShow.right.content as string}
+                {hypeContent}
               </p>
-            ) : (
-              <div className="space-y-1.5">
-                <p className="text-xs font-mono text-red-600 mb-1">
-                  Evidence Layer: Anti-tweets
-                </p>
-                {(contentToShow.right.content as Tweet[]).slice(0, 3).map((tweet) => (
-                  <TweetCard key={tweet.id} tweet={tweet} />
-                ))}
-              </div>
-            )}
+            </div>
           </div>
-        </div>
 
-        {/* Interactive Slider */}
-        <div 
-          className="absolute top-0 w-1 h-full bg-black cursor-col-resize z-20 hover:bg-gray-600 transition-colors"
-          style={{ left: `${sliderPosition}%`, transform: 'translateX(-50%)' }}
-        >
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3 h-8 bg-black rounded-sm"></div>
-        </div>
-
-        {/* Center Label */}
-        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-30">
-          <span className="text-xs font-mono font-bold bg-white px-2 py-1 border border-gray-300 shadow-sm">
-            DRAG TO EXPLORE NARRATIVES
-          </span>
+          {/* Negative Narrative */}
+          <div className="bg-red-50 border-l-2 border-red-200">
+            <div className="p-3 h-full overflow-y-auto">
+              <div className="mb-1.5">
+                <span className="text-xs font-mono font-bold text-red-700 bg-red-200 px-2 py-0.5">
+                  NEGATIVE NARRATIVE
+                </span>
+              </div>
+              <p className="text-xs font-mono text-gray-800 leading-relaxed">
+                {backlashContent}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Expand Tweets Button */}
+      <div className="mt-4 text-center">
+        <button
+          onClick={() => setShowTweets(!showTweets)}
+          className="px-4 py-2 font-mono font-bold text-sm bg-black text-white border-2 border-black transition-colors hover:bg-gray-800"
+        >
+          {showTweets ? 'HIDE TWEETS' : 'SHOW TWEETS'}
+        </button>
+      </div>
+
+      {/* Tweets Section */}
+      {showTweets && (
+        <div className="mt-4 border-clean">
+          <div className="grid grid-cols-2">
+            {/* Positive Tweets */}
+            <div className="bg-green-50 border-r-2 border-green-200 p-3">
+              <div className="mb-2">
+                <span className="text-xs font-mono font-bold text-green-700 bg-green-200 px-2 py-0.5">
+                  POSITIVE TWEETS
+                </span>
+              </div>
+              <div className="space-y-2">
+                {hypeTweets.slice(0, 5).map((tweet) => (
+                  <TweetCard key={tweet.id} tweet={tweet} sentiment="hype" />
+                ))}
+              </div>
+            </div>
+
+            {/* Negative Tweets */}
+            <div className="bg-red-50 border-l-2 border-red-200 p-3">
+              <div className="mb-2">
+                <span className="text-xs font-mono font-bold text-red-700 bg-red-200 px-2 py-0.5">
+                  NEGATIVE TWEETS
+                </span>
+              </div>
+              <div className="space-y-2">
+                {backlashTweets.slice(0, 5).map((tweet) => (
+                  <TweetCard key={tweet.id} tweet={tweet} sentiment="backlash" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Post-Battle Analysis */}
       <div className="border-clean mt-4">
