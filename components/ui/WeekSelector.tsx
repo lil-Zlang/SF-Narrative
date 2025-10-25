@@ -10,7 +10,7 @@ interface Week {
 
 interface WeekSelectorProps {
   weeks: Week[];
-  selectedWeek: Date;
+  selectedWeek: Date | null;
   onSelectWeek: (weekOf: Date) => void;
 }
 
@@ -62,11 +62,12 @@ export default function WeekSelector({ weeks, selectedWeek, onSelectWeek }: Week
   };
 
   const isSelected = (week: Week) => {
+    if (!selectedWeek) return false;
     return new Date(week.weekOf).toDateString() === new Date(selectedWeek).toDateString();
   };
 
   const currentIndex = weeks.findIndex(w => 
-    new Date(w.weekOf).toDateString() === new Date(selectedWeek).toDateString()
+    selectedWeek && new Date(w.weekOf).toDateString() === new Date(selectedWeek).toDateString()
   );
 
   const goToPreviousWeek = () => {
@@ -177,7 +178,7 @@ export default function WeekSelector({ weeks, selectedWeek, onSelectWeek }: Week
         <div className="font-mono text-sm">
           <span className="text-gray-600">VIEWING: </span>
           <span className="font-bold">
-            Week of {formatWeekDate(selectedWeek)}
+            Week of {selectedWeek ? formatWeekDate(selectedWeek) : 'None'}
           </span>
         </div>
       </div>

@@ -151,7 +151,7 @@ export default function HomeClient({ events, weeklyNews: initialWeeklyNews, erro
       setError(null);
       
       try {
-        const weekParam = selectedWeek.toISOString().split('T')[0];
+        const weekParam = selectedWeek!.toISOString().split('T')[0];
         const response = await fetch(`/api/weekly-news?weekOf=${weekParam}`);
         const data = await response.json();
         
