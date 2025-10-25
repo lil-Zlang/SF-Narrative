@@ -32,3 +32,4 @@ export function Slider({ position, isDragging }: SliderProps) {
     </>
   );
 }
+

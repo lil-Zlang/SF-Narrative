@@ -25,3 +25,4 @@ export function BattleHeader({ headline, weekOf }: BattleHeaderProps) {
     </div>
   );
 }
+

@@ -35,3 +35,4 @@ export function PostBattleAnalysis({ summary, onAskQuestions }: PostBattleAnalys
     </div>
   );
 }
+

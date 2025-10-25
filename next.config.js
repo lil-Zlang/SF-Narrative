@@ -2,6 +2,11 @@
 const nextConfig = {
   reactStrictMode: true,
   
+  // Ensure Prisma binaries are included in serverless functions
+  outputFileTracingIncludes: {
+    '/': ['./node_modules/.prisma/client/**/*'],
+  },
+  
   // Content Security Policy headers (allows unsafe-eval for serverless functions)
   async headers() {
     return [
