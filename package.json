@@ -9,7 +9,11 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "test-x-api": "tsx scripts/test-x-api.ts"
+    "test-x-api": "tsx scripts/test-x-api.ts",
+    "seed-historical": "tsx scripts/seed-historical-news.ts",
+    "seed-historical-mock": "tsx scripts/seed-historical-news-mock.ts",
+    "seed-real-news": "tsx scripts/seed-real-news-weeks.ts",
+    "cleanup-weeks": "tsx scripts/cleanup-duplicate-weeks.ts"
   },
   "repository": {
     "type": "git",
@@ -40,6 +44,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tailwindcss": "^4.1.16",
+    "tsx": "^4.19.2",
     "typescript": "^5.9.3",
     "zod": "^4.1.12"
   }

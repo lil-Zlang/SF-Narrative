@@ -1,42 +1,65 @@
 'use client';
 
-import { useState } from 'react';
-import { ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ChevronDown, ChevronUp, ExternalLink, MessageSquare } from 'lucide-react';
 import type { CategoryNews } from '@/lib/types';
 
 interface NewsCardProps {
   news: CategoryNews;
+  onAskAI: () => void;
+  isHighlighted?: boolean;
+  onHashtagClick?: (keyword: string) => void;
 }
 
 const CATEGORY_STYLES = {
   tech: {
     badge: 'bg-blue-100 text-blue-800 border-blue-300',
     header: 'border-blue-200 bg-blue-50',
+    highlight: 'ring-4 ring-blue-400 ring-offset-4',
     label: 'Technology',
   },
   politics: {
     badge: 'bg-purple-100 text-purple-800 border-purple-300',
     header: 'border-purple-200 bg-purple-50',
+    highlight: 'ring-4 ring-purple-400 ring-offset-4',
     label: 'Politics',
   },
   economy: {
     badge: 'bg-green-100 text-green-800 border-green-300',
     header: 'border-green-200 bg-green-50',
+    highlight: 'ring-4 ring-green-400 ring-offset-4',
     label: 'Economy',
   },
   'sf-local': {
     badge: 'bg-orange-100 text-orange-800 border-orange-300',
     header: 'border-orange-200 bg-orange-50',
+    highlight: 'ring-4 ring-orange-400 ring-offset-4',
     label: 'SF Local',
   },
 };
 
-export default function NewsCard({ news }: NewsCardProps) {
+export default function NewsCard({ news, onAskAI, isHighlighted, onHashtagClick }: NewsCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showHighlight, setShowHighlight] = useState(false);
   const styles = CATEGORY_STYLES[news.category];
 
+  // Handle highlight animation
+  useEffect(() => {
+    if (isHighlighted) {
+      setShowHighlight(true);
+      // Auto-remove highlight after 3 seconds
+      const timer = setTimeout(() => setShowHighlight(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isHighlighted]);
+
   return (
-    <div className="border border-gray-300 bg-white hover:shadow-lg transition-shadow">
+    <div 
+      id={`news-${news.category}`}
+      className={`border border-gray-300 bg-white hover:shadow-lg transition-all duration-300 ${
+        showHighlight ? styles.highlight : ''
+      }`}
+    >
       {/* Header with category badge */}
       <div className={`border-b px-6 py-4 ${styles.header}`}>
         <div className="flex items-center justify-between">
@@ -46,12 +69,14 @@ export default function NewsCard({ news }: NewsCardProps) {
           {news.keywords.length > 0 && (
             <div className="flex gap-2 flex-wrap">
               {news.keywords.slice(0, 3).map((keyword, index) => (
-                <span
+                <button
                   key={index}
-                  className="text-xs font-mono text-gray-600 bg-white border border-gray-300 px-2 py-1"
+                  onClick={() => onHashtagClick?.(keyword)}
+                  className="text-xs font-mono text-blue-600 bg-blue-50 border border-blue-200 px-2 py-1 hover:bg-blue-100 hover:border-blue-300 hover:text-blue-700 transition-all duration-200 cursor-pointer rounded-sm shadow-sm hover:shadow-md"
+                  title={`Jump to ${keyword}`}
                 >
                   #{keyword}
-                </span>
+                </button>
               ))}
             </div>
           )}
@@ -127,25 +152,34 @@ export default function NewsCard({ news }: NewsCardProps) {
           </div>
         )}
 
-        {/* Expand/Collapse button */}
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 bg-white hover:bg-gray-50 transition-colors font-mono text-sm font-bold"
-        >
-          {isExpanded ? (
-            <>
-              <ChevronUp className="w-4 h-4" />
-              Show Less
-            </>
-          ) : (
-            <>
-              <ChevronDown className="w-4 h-4" />
-              Read More
-            </>
-          )}
-        </button>
+        {/* Action buttons */}
+        <div className="mt-4 flex gap-2">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 bg-white hover:bg-gray-50 transition-colors font-mono text-sm font-bold"
+          >
+            {isExpanded ? (
+              <>
+                <ChevronUp className="w-4 h-4" />
+                Show Less
+              </>
+            ) : (
+              <>
+                <ChevronDown className="w-4 h-4" />
+                Read More
+              </>
+            )}
+          </button>
+          <button
+            onClick={onAskAI}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 bg-white hover:bg-gray-50 transition-colors font-mono text-sm font-bold"
+            title="Ask AI about this news"
+          >
+            <MessageSquare className="w-4 h-4" />
+            Ask AI
+          </button>
+        </div>
       </div>
     </div>
   );
 }
-
