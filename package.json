@@ -9,7 +9,6 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "test-x-api": "tsx scripts/test-x-api.ts"
   },
   "repository": {
