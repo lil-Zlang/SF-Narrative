@@ -186,7 +186,7 @@ export default function SplitScreenBattle({
           <div className="p-3 h-full overflow-y-auto">
             <div className="mb-1.5">
               <span className="text-xs font-mono font-bold text-green-700 bg-green-200 px-2 py-0.5">
-                HYPE NARRATIVE
+                POSITIVE NARRATIVE
               </span>
             </div>
             
@@ -215,7 +215,7 @@ export default function SplitScreenBattle({
           <div className="p-3 h-full overflow-y-auto">
             <div className="mb-1.5">
               <span className="text-xs font-mono font-bold text-red-700 bg-red-200 px-2 py-0.5">
-                BACKLASH NARRATIVE
+                NEGATIVE NARRATIVE
               </span>
             </div>
             
@@ -238,16 +238,16 @@ export default function SplitScreenBattle({
 
         {/* Interactive Slider */}
         <div 
-          className="absolute top-0 w-1 h-full bg-black cursor-col-resize z-10 hover:bg-gray-600 transition-colors"
+          className="absolute top-0 w-1 h-full bg-black cursor-col-resize z-20 hover:bg-gray-600 transition-colors"
           style={{ left: `${sliderPosition}%`, transform: 'translateX(-50%)' }}
         >
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3 h-8 bg-black rounded-sm"></div>
         </div>
 
         {/* Center Label */}
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20">
-          <span className="text-xs font-mono font-bold bg-white px-2 py-1 border border-gray-300">
-            DRAG TO EXCAVATE EVIDENCE
+        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-30">
+          <span className="text-xs font-mono font-bold bg-white px-2 py-1 border border-gray-300 shadow-sm">
+            DRAG TO EXPLORE NARRATIVES
           </span>
         </div>
       </div>

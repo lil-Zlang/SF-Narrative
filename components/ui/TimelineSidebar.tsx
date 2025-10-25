@@ -102,11 +102,11 @@ export default function TimelineSidebar({
           <div className="text-xs font-mono text-gray-500 space-y-2">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-green-100 border border-green-300 rounded-sm"></div>
-              <span>Hype Narrative</span>
+              <span>Positive Narrative</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-red-100 border border-red-300 rounded-sm"></div>
-              <span>Backlash Narrative</span>
+              <span>Negative Narrative</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-gray-100 border border-gray-300 rounded-sm"></div>

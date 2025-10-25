@@ -142,6 +142,7 @@ export interface TimelineEventCardProps {
 
 export interface TweetCardProps {
   tweet: Tweet;
+  sentiment?: 'hype' | 'backlash';
 }
 
 export interface ChatbotModalProps {

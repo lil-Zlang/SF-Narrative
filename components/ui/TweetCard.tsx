@@ -9,8 +9,8 @@ import type { Tweet, TweetCardProps } from '@/lib/types';
  * 
  * Displays a single tweet with author info, content, and engagement metrics
  */
-export default function TweetCard({ tweet }: TweetCardProps) {
-  const isHype = tweet.sentiment === 'hype';
+export default function TweetCard({ tweet, sentiment }: TweetCardProps) {
+  const isHype = sentiment === 'hype';
   const cardStyles = isHype 
     ? 'bg-green-50 border-green-200 hover:bg-green-100' 
     : 'bg-red-50 border-red-200 hover:bg-red-100';

@@ -51,7 +51,7 @@ export function ContentPanel({ content, sentiment, width, isLoading = false }: C
               {evidenceLabel}
             </p>
             {(content.content as Tweet[]).slice(0, 3).map((tweet) => (
-              <TweetCard key={tweet.id} tweet={tweet} />
+              <TweetCard key={tweet.id} tweet={tweet} sentiment={sentiment} />
             ))}
           </div>
         )}

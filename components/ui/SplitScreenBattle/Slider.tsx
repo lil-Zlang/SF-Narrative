@@ -15,7 +15,7 @@ export function Slider({ position, isDragging }: SliderProps) {
     <>
       {/* Interactive Slider Handle */}
       <div 
-        className={`absolute top-0 w-1 h-full bg-black cursor-col-resize z-10 transition-colors ${
+        className={`absolute top-0 w-1 h-full bg-black cursor-col-resize z-20 transition-colors ${
           isDragging ? 'bg-gray-600' : 'hover:bg-gray-600'
         }`}
         style={{ left: `${position}%`, transform: 'translateX(-50%)' }}
@@ -24,8 +24,8 @@ export function Slider({ position, isDragging }: SliderProps) {
       </div>
 
       {/* Center Label */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20">
-        <span className="text-xs font-mono font-bold bg-white px-2 py-1 border border-gray-300">
+      <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-30">
+        <span className="text-xs font-mono font-bold bg-white px-2 py-1 border border-gray-300 shadow-sm">
           {UI_TEXT.DRAG_INSTRUCTION}
         </span>
       </div>
