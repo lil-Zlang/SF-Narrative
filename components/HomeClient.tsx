@@ -1,17 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { UI_TEXT } from '@/lib/constants';
-import TimelineEventCard from '@/components/TimelineEventCard';
-import SectionHeader from '@/components/ui/SectionHeader';
-import TimelineSidebar from '@/components/ui/TimelineSidebar';
+import { useState, useEffect } from 'react';
 import NewsCard from '@/components/ui/NewsCard';
 import NewsQAModal from '@/components/ui/NewsQAModal';
 import WeekSelector from '@/components/ui/WeekSelector';
-import type { TimelineEvent, WeeklyNews, CategoryNews } from '@/lib/types';
+import type { WeeklyNews, CategoryNews } from '@/lib/types';
 
 interface HomeClientProps {
-  events: TimelineEvent[];
   weeklyNews: WeeklyNews | null;
   error: string | null;
 }
@@ -19,11 +14,9 @@ interface HomeClientProps {
 /**
  * HomeClient Component
  * 
- * Client-side component that handles timeline interactions, scrolling, and news Q&A
+ * Client-side component that handles weekly news interactions and news Q&A
  */
-export default function HomeClient({ events, weeklyNews: initialWeeklyNews, error: initialError }: HomeClientProps) {
-  const [activeEventId, setActiveEventId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'news' | 'archive'>('news');
+export default function HomeClient({ weeklyNews: initialWeeklyNews, error: initialError }: HomeClientProps) {
   const [highlightedCategory, setHighlightedCategory] = useState<string | null>(null);
   const [qaModalOpen, setQaModalOpen] = useState(false);
   const [selectedNews, setSelectedNews] = useState<CategoryNews | null>(null);
@@ -32,10 +25,6 @@ export default function HomeClient({ events, weeklyNews: initialWeeklyNews, erro
   const [weeklyNews, setWeeklyNews] = useState<WeeklyNews | null>(initialWeeklyNews);
   const [error, setError] = useState<string | null>(initialError);
   const [isLoadingWeek, setIsLoadingWeek] = useState(false);
-  const eventRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-
-  // Calculate the number of weeks covered by the events
-  const weeksCount = events.length > 0 ? events.length : 0;
 
   // Format week date for display
   const formatWeekDate = (date: Date) => {
@@ -44,21 +33,6 @@ export default function HomeClient({ events, weeklyNews: initialWeeklyNews, erro
       day: 'numeric',
       year: 'numeric',
     });
-  };
-
-  /**
-   * Handle timeline event click - scroll to the specific event
-   */
-  const handleEventClick = (eventId: string) => {
-    setActiveEventId(eventId);
-    
-    const eventElement = eventRefs.current[eventId];
-    if (eventElement) {
-      eventElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    }
   };
 
   /**
@@ -145,13 +119,16 @@ export default function HomeClient({ events, weeklyNews: initialWeeklyNews, erro
    */
   useEffect(() => {
     if (!selectedWeek) return;
-    
+
+    // Capture selectedWeek value for use in async function
+    const weekToFetch = selectedWeek;
+
     async function fetchWeekNews() {
       setIsLoadingWeek(true);
       setError(null);
-      
+
       try {
-        const weekParam = selectedWeek!.toISOString().split('T')[0];
+        const weekParam = weekToFetch.toISOString().split('T')[0];
         const response = await fetch(`/api/weekly-news?weekOf=${weekParam}`);
         const data = await response.json();
         
@@ -173,44 +150,9 @@ export default function HomeClient({ events, weeklyNews: initialWeeklyNews, erro
     fetchWeekNews();
   }, [selectedWeek]);
 
-  /**
-   * Set up intersection observer to track which event is currently visible
-   */
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const eventId = entry.target.getAttribute('data-event-id');
-            if (eventId) {
-              setActiveEventId(eventId);
-            }
-          }
-        });
-      },
-      {
-        threshold: 0.5,
-        rootMargin: '-100px 0px -100px 0px',
-      }
-    );
-
-    // Observe all event elements
-    Object.values(eventRefs.current).forEach((element) => {
-      if (element) {
-        observer.observe(element);
-      }
-    });
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [events]);
-
   return (
     <main className="min-h-screen bg-white">
-      <div className="flex">
-        {/* Main Content */}
-        <div className="flex-1 container mx-auto px-6 py-12 max-w-4xl lg:max-w-none">
+      <div className="w-full px-8 lg:px-16 py-12">
           {/* Header */}
           <div className="mb-16">
             <h1 className="text-4xl md:text-5xl font-mono font-bold mb-4">
@@ -221,16 +163,8 @@ export default function HomeClient({ events, weeklyNews: initialWeeklyNews, erro
             </p>
           </div>
 
-          {/* Tab Navigation - Archive Hidden */}
-          <div className="mb-8 border-b border-gray-300">
-            <div className="px-6 py-3 font-mono font-bold text-sm border-b-2 border-black text-black inline-block">
-              This Week's News
-            </div>
-          </div>
-
-          {/* This Week's News Tab */}
-          {activeTab === 'news' && (
-            <>
+          {/* Weekly News Section */}
+          <>
               {/* Week Selector */}
               {availableWeeks.length > 0 && selectedWeek && (
                 <div className="mb-8">
@@ -315,38 +249,6 @@ export default function HomeClient({ events, weeklyNews: initialWeeklyNews, erro
                 </>
               )}
             </>
-          )}
-
-          {/* Archive Tab */}
-          {activeTab === 'archive' && (
-            <>
-              <SectionHeader 
-                title={`Most Heated Events in SF (Past ${weeksCount} weeks)`}
-              />
-              
-              {events.length === 0 ? (
-                <div className="text-center py-16 border border-gray-300">
-                  <p className="text-lg font-mono text-gray-500">
-                    No archived events available.
-                  </p>
-                </div>
-              ) : (
-                <div>
-                  {events.map((event) => (
-                    <div
-                      key={event.id}
-                      ref={(el) => {
-                        eventRefs.current[event.id] = el;
-                      }}
-                      data-event-id={event.id}
-                    >
-                      <TimelineEventCard event={event} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
 
           {/* Footer */}
           <div className="mt-16 pt-8 border-t border-gray-200 text-center">
@@ -354,18 +256,6 @@ export default function HomeClient({ events, weeklyNews: initialWeeklyNews, erro
               Updated every Friday • Powered by AI
             </p>
           </div>
-        </div>
-        
-        {/* Timeline Sidebar - Hidden on mobile, visible on large screens */}
-        {activeTab === 'archive' && events.length > 0 && (
-          <div className="hidden lg:block">
-            <TimelineSidebar 
-              events={events} 
-              activeEventId={activeEventId || undefined}
-              onEventClick={handleEventClick}
-            />
-          </div>
-        )}
       </div>
 
       {/* News Q&A Modal */}

@@ -1,8 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/cron/process-trends",
-      "schedule": "0 0 * * 1"
+      "path": "/api/seed-weekly-news-real",
+      "schedule": "0 8 * * 6"
     }
   ]
 }

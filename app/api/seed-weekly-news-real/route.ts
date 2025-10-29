@@ -73,25 +73,68 @@ async function generateCategorySummary(
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔄 Fetching REAL weekly news from Oct 20, 2025 onwards...');
+    // Verify authorization - allow Vercel Cron or manual auth token
+    const authHeader = request.headers.get('authorization');
+    const cronSecret = process.env.CRON_SECRET;
     
-    const weekStart = new Date('2025-10-20');
-    weekStart.setHours(0, 0, 0, 0);
+    // Check if request is from Vercel Cron or has valid auth token
+    const isVercelCron = authHeader === `Bearer ${cronSecret}`;
+    const isManualAuth = cronSecret && authHeader === `Bearer ${cronSecret}`;
+    
+    if (cronSecret && !isVercelCron && !isManualAuth) {
+      console.log('⛔ Unauthorized cron request');
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    console.log('🔄 Fetching REAL weekly news from Oct 20, 2025 onwards...');
+
+    // Get weekOf parameter from query string (if provided)
+    const searchParams = request.nextUrl.searchParams;
+    const weekOfParam = searchParams.get('weekOf');
+
+    // Calculate the week to fetch news for
+    let weekOf: Date;
+    if (weekOfParam) {
+      // Use provided week
+      weekOf = new Date(weekOfParam);
+      weekOf.setHours(0, 0, 0, 0);
+    } else {
+      // Calculate current week start (Monday)
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      weekOf = new Date(now);
+      weekOf.setDate(now.getDate() + diff);
+      weekOf.setHours(0, 0, 0, 0);
+    }
+
+    // The absolute minimum date for news (Oct 20, 2025)
+    const minimumDate = new Date('2025-10-20');
+    minimumDate.setHours(0, 0, 0, 0);
+
+    // Ensure we're not fetching news before Oct 20
+    const fetchStartDate = weekOf < minimumDate ? minimumDate : weekOf;
+
+    console.log(`📅 Fetching news for week of: ${weekOf.toISOString().split('T')[0]}`);
+    console.log(`📅 Fetching articles from: ${fetchStartDate.toISOString().split('T')[0]}`);
 
     // Fetch real news from NewsAPI/Google RSS for all categories
     console.log('📰 Fetching news from APIs...');
     const [techArticles, politicsArticles, economyArticles, sfArticles] = await Promise.all([
-      fetchNewsWithFallback('tech', weekStart),
-      fetchNewsWithFallback('politics', weekStart),
-      fetchNewsWithFallback('economy', weekStart),
-      fetchNewsWithFallback('sf-local', weekStart),
+      fetchNewsWithFallback('tech', fetchStartDate),
+      fetchNewsWithFallback('politics', fetchStartDate),
+      fetchNewsWithFallback('economy', fetchStartDate),
+      fetchNewsWithFallback('sf-local', fetchStartDate),
     ]);
 
-    // Additional filtering to ensure dates are from Oct 20 onwards
-    const filteredTech = filterByStartDate(techArticles, weekStart);
-    const filteredPolitics = filterByStartDate(politicsArticles, weekStart);
-    const filteredEconomy = filterByStartDate(economyArticles, weekStart);
-    const filteredSF = filterByStartDate(sfArticles, weekStart);
+    // Additional filtering to ensure dates are from the fetch start date onwards
+    const filteredTech = filterByStartDate(techArticles, fetchStartDate);
+    const filteredPolitics = filterByStartDate(politicsArticles, fetchStartDate);
+    const filteredEconomy = filterByStartDate(economyArticles, fetchStartDate);
+    const filteredSF = filterByStartDate(sfArticles, fetchStartDate);
 
     console.log(`📊 Article counts:
   Tech: ${filteredTech.length}
@@ -156,15 +199,7 @@ export async function GET(request: NextRequest) {
       ...sfLocalNews.keywords,
     ];
 
-    // Calculate week start (Monday)
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    const weekOf = new Date(now);
-    weekOf.setDate(now.getDate() + diff);
-    weekOf.setHours(0, 0, 0, 0);
-
-    // Save to database
+    // Save to database using the weekOf we calculated earlier
     console.log('💾 Saving to database...');
     const weeklyNews = await prisma.weeklyNews.upsert({
       where: {

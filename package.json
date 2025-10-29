@@ -1,7 +1,7 @@
 {
-  "name": "sf-narrative",
+  "name": "sf-weekly-news-digest",
   "version": "1.0.0",
-  "description": "",
+  "description": "AI-powered weekly news digest for San Francisco",
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
@@ -9,11 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "test-x-api": "tsx scripts/test-x-api.ts",
-    "seed-historical": "tsx scripts/seed-historical-news.ts",
-    "seed-historical-mock": "tsx scripts/seed-historical-news-mock.ts",
-    "seed-real-news": "tsx scripts/seed-real-news-weeks.ts",
-    "cleanup-weeks": "tsx scripts/cleanup-duplicate-weeks.ts"
+    "seed-news": "tsx scripts/seed-real-news-weeks.ts"
   },
   "repository": {
     "type": "git",

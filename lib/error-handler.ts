@@ -2,7 +2,12 @@
  * Centralized error handling utilities
  */
 
-import { ERROR_MESSAGES } from './constants';
+/**
+ * Error messages for consistent error responses
+ */
+const ERROR_MESSAGES = {
+  API_REQUEST_FAILED: 'Failed to complete API request',
+} as const;
 
 /**
  * Custom error class for application-specific errors
