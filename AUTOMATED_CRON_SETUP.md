@@ -1,10 +1,10 @@
 # Automated Weekly News Fetching Setup
 
-This app is configured to automatically fetch and create weekly news every **Saturday at 8:00 AM UTC** using Vercel Cron Jobs.
+This app is configured to automatically fetch and create weekly news every **Friday at 8:00 AM UTC** using Vercel Cron Jobs.
 
 ## How It Works
 
-1. **Vercel Cron Job** triggers every Saturday at 8am
+1. **Vercel Cron Job** triggers every Friday at 8am
 2. Calls `/api/seed-weekly-news-real` endpoint
 3. Fetches latest news from 20+ SF sources
 4. Generates AI summaries using Novita AI
@@ -57,7 +57,7 @@ The cron job is already configured in `vercel.json`:
 - `8` - Hour (8 AM UTC)
 - `*` - Day of month (every day)
 - `*` - Month (every month)
-- `6` - Day of week (6 = Saturday)
+- `5` - Day of week (5 = Friday)
 
 ### 4. Verify Cron Setup
 
@@ -65,7 +65,7 @@ After deployment, verify the cron job in Vercel:
 
 1. Go to your Vercel project dashboard
 2. Navigate to **Settings** → **Cron Jobs**
-3. You should see: `Saturday at 8:00 AM UTC`
+3. You should see: `Friday at 8:00 AM UTC`
 
 ### 5. Monitor Cron Execution
 
@@ -90,6 +90,23 @@ curl -X GET "https://your-app.vercel.app/api/seed-weekly-news-real" \
 Visit: `https://your-app.vercel.app/api/seed-weekly-news-real`
 
 (Only works if CRON_SECRET is not set, for development)
+
+### Generate Specific Week:
+
+To generate content for a specific week, add the `weekOf` query parameter:
+
+```bash
+curl -X GET "https://your-app.vercel.app/api/seed-weekly-news-real?weekOf=2025-10-26" \
+  -H "Authorization: Bearer YOUR_CRON_SECRET"
+```
+
+**Example: Generate Week 44 (Oct 26 - Nov 1, 2025):**
+```bash
+curl -X GET "https://your-app.vercel.app/api/seed-weekly-news-real?weekOf=2025-10-26" \
+  -H "Authorization: Bearer YOUR_CRON_SECRET"
+```
+
+The `weekOf` parameter should be the Sunday date of the week you want to generate (e.g., "2025-10-26" for week 44).
 
 ## Customizing the Schedule
 
@@ -182,7 +199,7 @@ curl http://localhost:3000/api/seed-weekly-news-real
 ## Next Steps
 
 After setup:
-- ✅ Weekly news will be automatically fetched every Saturday
+- ✅ Weekly news will be automatically fetched every Friday
 - ✅ Users will see new weeks without manual intervention
 - ✅ The app stays up-to-date with latest SF news
 - ✅ Zero maintenance required for weekly updates

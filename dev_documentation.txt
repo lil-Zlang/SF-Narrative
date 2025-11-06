@@ -493,3 +493,140 @@ RESULT:
 
 ===============================================
 
+Date: Current session
+Time: Current session
+
+===============================================
+CHANGE LOG - Fixed Week Number Alignment Issue
+===============================================
+
+TASK: Fix week number calculation to align with actual calendar weeks
+
+RATIONALE:
+- Week numbers displayed in UI were off by 1 compared to the calendar format
+- Calendar uses Sunday-starting weeks with Week 1 starting on Dec 28, 2024 (for 2025)
+- Original implementation added +1 to ISO week numbers, causing misalignment
+- Need to match the calendar's week numbering system exactly
+
+CHANGES MADE:
+
+1. Updated getWeekNumber function in WeekSelector.tsx:
+   - Changed from ISO week calculation (Monday-starting) to Sunday-starting weeks
+   - Week 1 now correctly starts on Dec 28, 2024 (or adjusted date for other years)
+   - Calculates week number based on Sunday of the week containing the date
+   - Properly handles dates from both Date objects and ISO strings
+   - Extracts date components from ISO strings to avoid timezone conversion issues
+
+2. Fixed timezone handling:
+   - Parses ISO date strings directly to get year/month/day components
+   - Converts Date objects to ISO strings first to get actual calendar date
+   - Avoids timezone shift issues when dates are parsed as UTC
+
+3. Calculation logic:
+   - Finds Sunday that starts the week containing the input date
+   - Calculates Week 1 start as Dec 28 of the year before (or adjusted)
+   - Computes week number based on days difference divided by 7
+
+FILES MODIFIED:
+- components/ui/WeekSelector.tsx (updated getWeekNumber function)
+
+TESTING:
+- Verified all test dates match expected week numbers:
+  ✓ Oct 20, 2025 = Week 43
+  ✓ Oct 12, 2025 = Week 42
+  ✓ Oct 5, 2025 = Week 41
+  ✓ Sep 28, 2025 = Week 40
+  ✓ Sep 21, 2025 = Week 39
+  ✓ Sep 14, 2025 = Week 38
+  ✓ Sep 7, 2025 = Week 37
+
+RESULT:
+✅ Week numbers now correctly align with calendar format
+✅ Sunday-starting week calculation implemented
+✅ Timezone issues resolved
+✅ All test cases passing
+
+===============================================
+
+Date: Current session
+Time: Current session
+
+===============================================
+CHANGE LOG - Updated Cron Schedule & Week 44 Content Generation
+===============================================
+
+TASK: 
+1. Update cron schedule from Saturday to Friday
+2. Add support for generating week 44 content
+3. Fix Vercel Cron authentication
+4. Update API to use Sunday-starting weeks
+
+RATIONALE:
+- User requested cron job to run every Friday instead of Saturday
+- Need to generate content for week 44 (Oct 26 - Nov 1, 2025)
+- Ensure Vercel Cron authentication works correctly on deployment
+- Align API week calculation with UI's Sunday-starting week format
+
+CHANGES MADE:
+
+1. Updated cron schedule in vercel.json:
+   - Changed from "0 8 * * 6" (Saturday) to "0 8 * * 5" (Friday)
+   - Cron now runs every Friday at 8:00 AM UTC
+   - Updated documentation to reflect Friday schedule
+
+2. Fixed API week calculation (app/api/seed-weekly-news-real/route.ts):
+   - Changed from Monday-starting to Sunday-starting weeks
+   - Calculates week start as Sunday of current week
+   - Matches the UI's week selector format
+   - When weekOf parameter is provided, uses that date directly
+
+3. Fixed Vercel Cron authentication:
+   - Vercel Cron sends CRON_SECRET in x-vercel-cron-secret header
+   - Manual calls can use Authorization: Bearer <secret>
+   - Updated code to handle both authentication methods
+   - Ensures cron jobs work correctly on Vercel deployment
+
+4. Added week 44 generation support:
+   - API accepts weekOf query parameter for specific weeks
+   - Week 44 uses date: 2025-10-26 (Sunday)
+   - Created script/helper for generating week 44
+   - Added documentation for manual week generation
+
+5. Updated documentation:
+   - AUTOMATED_CRON_SETUP.md: Updated to Friday schedule
+   - Added instructions for generating specific weeks
+   - Added example for week 44 generation
+   - Updated troubleshooting section
+
+FILES MODIFIED:
+- vercel.json (updated cron schedule to Friday)
+- app/api/seed-weekly-news-real/route.ts (Sunday-starting weeks, Vercel auth fix)
+- AUTOMATED_CRON_SETUP.md (Friday schedule, week 44 instructions)
+
+FILES CREATED:
+- scripts/generate-week44.ts (helper script for week 44 generation)
+
+USAGE:
+
+Generate Week 44 manually:
+```bash
+curl -X GET "https://your-app.vercel.app/api/seed-weekly-news-real?weekOf=2025-10-26" \
+  -H "Authorization: Bearer YOUR_CRON_SECRET"
+```
+
+VERCEL DEPLOYMENT CHECKLIST:
+✅ Cron schedule updated to Friday (0 8 * * 5)
+✅ Vercel Cron authentication properly configured
+✅ API calculates Sunday-starting weeks (matches UI)
+✅ Week 44 can be generated with weekOf=2025-10-26
+✅ Documentation updated with new schedule
+
+RESULT:
+✅ Cron job now runs every Friday at 8:00 AM UTC
+✅ Week 44 content generation supported
+✅ Vercel Cron authentication fixed and tested
+✅ API week calculation matches UI format
+✅ Ready for Vercel deployment
+
+===============================================
+

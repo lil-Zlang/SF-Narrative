@@ -43,3 +43,6 @@ prisma/.env
 .cache/
 
 /generated/prisma
+
+# documentation
+dev_documentation.txt

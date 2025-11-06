@@ -74,13 +74,19 @@ async function generateCategorySummary(
 export async function GET(request: NextRequest) {
   try {
     // Verify authorization - allow Vercel Cron or manual auth token
+    // Vercel Cron automatically adds x-vercel-cron-secret header with CRON_SECRET value
+    // If CRON_SECRET is not set, allow all requests (development mode)
     const authHeader = request.headers.get('authorization');
+    const vercelCronSecret = request.headers.get('x-vercel-cron-secret');
     const cronSecret = process.env.CRON_SECRET;
     
     // Check if request is from Vercel Cron or has valid auth token
-    const isVercelCron = authHeader === `Bearer ${cronSecret}`;
+    // Vercel Cron sends CRON_SECRET directly in x-vercel-cron-secret header
+    // Manual calls can use Authorization: Bearer <secret>
+    const isVercelCron = cronSecret && vercelCronSecret === cronSecret;
     const isManualAuth = cronSecret && authHeader === `Bearer ${cronSecret}`;
     
+    // Only require auth if CRON_SECRET is set (production)
     if (cronSecret && !isVercelCron && !isManualAuth) {
       console.log('⛔ Unauthorized cron request');
       return NextResponse.json(
@@ -98,16 +104,22 @@ export async function GET(request: NextRequest) {
     // Calculate the week to fetch news for
     let weekOf: Date;
     if (weekOfParam) {
-      // Use provided week
-      weekOf = new Date(weekOfParam);
+      // Parse date string properly to avoid timezone issues
+      // Parse YYYY-MM-DD format directly as local date
+      const parts = weekOfParam.split('T')[0].split('-');
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+      const day = parseInt(parts[2], 10);
+      weekOf = new Date(year, month, day);
       weekOf.setHours(0, 0, 0, 0);
     } else {
-      // Calculate current week start (Monday)
+      // Calculate current week start (Sunday)
+      // Sunday = 0, Monday = 1, ..., Saturday = 6
       const now = new Date();
       const dayOfWeek = now.getDay();
-      const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const daysToSunday = dayOfWeek === 0 ? 0 : -dayOfWeek;
       weekOf = new Date(now);
-      weekOf.setDate(now.getDate() + diff);
+      weekOf.setDate(now.getDate() + daysToSunday);
       weekOf.setHours(0, 0, 0, 0);
     }
 

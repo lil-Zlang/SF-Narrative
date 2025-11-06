@@ -50,15 +50,61 @@ export default function WeekSelector({ weeks, selectedWeek, onSelectWeek }: Week
     return new Date(date).getDate();
   };
 
-  const getWeekNumber = (date: Date) => {
-    // Custom week number calculation to match desired numbering
-    // Oct 20, 2025 should be W43, so we add +1 to ISO week
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    const isoWeek = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-    return isoWeek + 1; // Add 1 to match desired numbering (Oct 20 = W43)
+  const getWeekNumber = (date: Date | string) => {
+    // Calculate week number for Sunday-starting weeks to match calendar format
+    // Week starts on Sunday, ends on Saturday
+    // Week 1 starts on Dec 28, 2024 (for 2025) or the Sunday before Jan 1
+    // Oct 20, 2025 should be W43 (Week 43: Oct 19-25)
+    
+    // Parse date properly to avoid timezone issues
+    let year: number, month: number, day: number;
+    
+    if (typeof date === 'string') {
+      // Parse ISO string directly (YYYY-MM-DD format)
+      const parts = date.split('T')[0].split('-');
+      year = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+      day = parseInt(parts[2], 10);
+    } else {
+      // For Date objects, convert to ISO string first to get the actual calendar date
+      // This avoids timezone conversion issues
+      const isoString = date.toISOString().split('T')[0];
+      const parts = isoString.split('-');
+      year = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+      day = parseInt(parts[2], 10);
+    }
+    
+    // Create date in local timezone
+    const localDate = new Date(year, month, day);
+    
+    // Find the Sunday that starts the week containing this date
+    const dayOfWeek = localDate.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    const sundayOfWeek = new Date(year, month, day - dayOfWeek);
+    sundayOfWeek.setHours(0, 0, 0, 0);
+    
+    // Find Week 1 start: Dec 28 of the year before (or adjusted for Jan 1)
+    const weekYear = sundayOfWeek.getFullYear();
+    const jan1 = new Date(weekYear, 0, 1);
+    jan1.setHours(0, 0, 0, 0);
+    const jan1DayOfWeek = jan1.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    
+    // Find the Sunday before Jan 1, then subtract 1 day to get Dec 28
+    let week1Start: Date;
+    if (jan1DayOfWeek === 0) {
+      // Jan 1 is Sunday, so Week 1 starts on Jan 1
+      week1Start = new Date(jan1);
+    } else {
+      // Jan 1 is not Sunday, find the Sunday before Jan 1, then subtract 1 day
+      week1Start = new Date(weekYear, 0, 1 - jan1DayOfWeek - 1);
+      week1Start.setHours(0, 0, 0, 0);
+    }
+    
+    // Calculate week number based on days from Week 1 start
+    const daysDiff = Math.floor((sundayOfWeek.getTime() - week1Start.getTime()) / (1000 * 60 * 60 * 24));
+    const weekNumber = Math.floor(daysDiff / 7) + 1;
+    
+    return weekNumber;
   };
 
   const isSelected = (week: Week) => {
