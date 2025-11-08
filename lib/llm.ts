@@ -175,6 +175,26 @@ export async function analyzeNarrativesWithRetry(
  * @param articles - Array of news articles to summarize
  * @returns News summary with short/detailed summaries, bullets, and keywords
  */
+/**
+ * Fetch with timeout support
+ */
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number = 30000): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
+
 export async function summarizeWeeklyNews(
   category: 'tech' | 'politics' | 'economy' | 'sf-local',
   articles: NewsArticle[]
@@ -228,7 +248,8 @@ ${articlesText}
 Return only the raw JSON object, with no other text.`;
 
   try {
-    const response = await fetch('https://api.novita.ai/v3/openai/chat/completions', {
+    console.log(`⏱️  Calling Novita API for ${category} with 30s timeout...`);
+    const response = await fetchWithTimeout('https://api.novita.ai/v3/openai/chat/completions', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -250,7 +271,7 @@ Return only the raw JSON object, with no other text.`;
         max_tokens: 1500,
         response_format: { type: 'json_object' },
       }),
-    });
+    }, 30000);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -269,7 +290,7 @@ Return only the raw JSON object, with no other text.`;
 
     // Clean the response - remove markdown code blocks if present
     let cleanedContent = content.trim();
-    
+
     if (cleanedContent.startsWith('```json')) {
       cleanedContent = cleanedContent.replace(/^```json\s*\n?/, '').replace(/\n?```\s*$/, '');
     } else if (cleanedContent.startsWith('```')) {
