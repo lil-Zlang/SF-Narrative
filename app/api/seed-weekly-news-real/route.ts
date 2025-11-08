@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { fetchNewsWithFallback } from '@/lib/news-api';
-import { summarizeWeeklyNewsWithRetry } from '@/lib/llm';
 import type { NewsArticle, CategoryNews } from '@/lib/types';
 import { filterByStartDate } from '@/lib/news-aggregator';
 
@@ -11,12 +10,12 @@ import { filterByStartDate } from '@/lib/news-aggregator';
  */
 
 /**
- * Generate AI summary from real news articles
+ * Generate fallback summary from article titles and snippets (no AI calls to avoid timeouts)
  */
-async function generateCategorySummary(
+function generateCategorySummary(
   articles: NewsArticle[],
   category: 'tech' | 'politics' | 'economy' | 'sf-local'
-): Promise<Omit<CategoryNews, 'category' | 'sources'>> {
+): Omit<CategoryNews, 'category' | 'sources'> {
   // If no articles, return empty summary
   if (!articles || articles.length === 0) {
     return {
@@ -27,48 +26,31 @@ async function generateCategorySummary(
     };
   }
 
-  try {
-    // Use the existing summarizeWeeklyNewsWithRetry function
-    console.log(`🤖 Generating AI summary for ${category} with ${articles.length} articles...`);
-    const result = await summarizeWeeklyNewsWithRetry(category, articles, 3);
+  const categoryLabels = {
+    tech: 'San Francisco technology',
+    politics: 'San Francisco politics',
+    economy: 'San Francisco economy',
+    'sf-local': 'San Francisco local news',
+  };
 
-    console.log(`✓ AI summary generated for ${category}`);
-    return {
-      summaryShort: result.summaryShort,
-      summaryDetailed: result.summaryDetailed,
-      bullets: result.bullets,
-      keywords: result.keywords,
-    };
-  } catch (error) {
-    console.error(`❌ Error generating summary for ${category}:`, error);
-    
-    // Better fallback: Create a more natural summary from article titles and snippets
-    const categoryLabels = {
-      tech: 'San Francisco technology',
-      politics: 'San Francisco politics',
-      economy: 'San Francisco economy',
-      'sf-local': 'San Francisco local news',
-    };
-    
-    // Create a narrative-style fallback summary
-    const topArticles = articles.slice(0, 5);
-    const summaryShort = `This week in ${categoryLabels[category]}, key developments include: ${topArticles.slice(0, 3).map((a, i) => {
-      // Extract first sentence from snippet or use title
-      const firstSentence = a.snippet.split('.')[0] || a.title;
-      return `${firstSentence}`;
-    }).join('. ')}.`;
-    
-    const summaryDetailed = `Recent developments in ${categoryLabels[category]} this week highlight several important stories. ${topArticles.map((a, i) => {
-      return `${a.title.replace(' - ' + a.source, '')}`;
-    }).join('. ')}. These stories reflect the ongoing dynamics in San Francisco's ${category === 'sf-local' ? 'community' : category} landscape.`;
-    
-    return {
-      summaryShort,
-      summaryDetailed,
-      bullets: topArticles.map(a => a.title.replace(' - ' + a.source, '')),
-      keywords: [categoryLabels[category], 'San Francisco', 'Bay Area'],
-    };
-  }
+  // Create a narrative-style summary from article titles and snippets
+  const topArticles = articles.slice(0, 5);
+  const summaryShort = `This week in ${categoryLabels[category]}, key developments include: ${topArticles.slice(0, 3).map((a) => {
+    // Extract first sentence from snippet or use title
+    const firstSentence = a.snippet.split('.')[0] || a.title;
+    return `${firstSentence}`;
+  }).join('. ')}.`;
+
+  const summaryDetailed = `Recent developments in ${categoryLabels[category]} this week highlight several important stories. ${topArticles.map((a) => {
+    return `${a.title}`;
+  }).join('. ')}. These stories reflect the ongoing dynamics in San Francisco's ${category === 'sf-local' ? 'community' : category} landscape.`;
+
+  return {
+    summaryShort,
+    summaryDetailed,
+    bullets: topArticles.map(a => a.title),
+    keywords: [categoryLabels[category], 'San Francisco', 'Bay Area'],
+  };
 }
 
 export async function GET(request: NextRequest) {
@@ -162,21 +144,15 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Generate AI summaries for each category (sequentially to avoid rate limits and improve quality)
-    console.log('🤖 Generating AI summaries...');
-    
-    const techSummary = await generateCategorySummary(filteredTech.slice(0, 10), 'tech');
-    await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
-    
-    const politicsSummary = await generateCategorySummary(filteredPolitics.slice(0, 10), 'politics');
-    await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
-    
-    const economySummary = await generateCategorySummary(filteredEconomy.slice(0, 10), 'economy');
-    await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
-    
-    const sfSummary = await generateCategorySummary(filteredSF.slice(0, 10), 'sf-local');
-    
-    console.log('✓ All AI summaries generated successfully');
+    // Generate summaries for each category using fallback (no AI to avoid timeouts)
+    console.log('📝 Generating summaries (using fallback to avoid timeouts)...');
+
+    const techSummary = generateCategorySummary(filteredTech.slice(0, 10), 'tech');
+    const politicsSummary = generateCategorySummary(filteredPolitics.slice(0, 10), 'politics');
+    const economySummary = generateCategorySummary(filteredEconomy.slice(0, 10), 'economy');
+    const sfSummary = generateCategorySummary(filteredSF.slice(0, 10), 'sf-local');
+
+    console.log('✓ All summaries generated successfully');
 
     // Combine category news
     const techNews: CategoryNews = {
